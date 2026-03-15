@@ -5,6 +5,7 @@ const gamePackageSchema = new mongoose.Schema({
   package: { type: String, enum: ["gold", "platinum", "diamond"], required: true },
   predictionsUsed: { type: Number, default: 0 },
   activatedAt: { type: Date, default: Date.now },
+  expiresAt: { type: Date, required: true },
 }, { _id: false });
 
 const pendingRequestSchema = new mongoose.Schema({

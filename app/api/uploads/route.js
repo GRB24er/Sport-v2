@@ -7,6 +7,7 @@ import Upload from "@/models/Upload";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
+import { isPackageExpired } from "@/lib/packageUtils";
 
 const PKG_LIMITS_DEF = { gold: 1, platinum: 2, diamond: 4 };
 const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
@@ -49,12 +50,18 @@ export async function POST(req) {
       return NextResponse.json({ error: "NO_PACKAGE", message: "No active package. Subscribe first." }, { status: 403 });
     }
 
+    // Check time-based expiry
+    if (isPackageExpired(gamePkg)) {
+      await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gId}`]: "" } });
+      return NextResponse.json({ error: "EXPIRED", message: "Package expired. Subscribe again." }, { status: 403 });
+    }
+
     const maxPreds = PKG_LIMITS[gamePkg.package] || 1;
     const used = gamePkg.predictionsUsed || 0;
 
     if (used >= maxPreds) {
       await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gId}`]: "" } });
-      return NextResponse.json({ error: "EXHAUSTED", message: "Package expired. Subscribe again." }, { status: 429 });
+      return NextResponse.json({ error: "EXHAUSTED", message: "All credits used. Subscribe again." }, { status: 429 });
     }
 
     // ATOMIC: Increment credit FIRST to prevent race condition (two concurrent uploads)

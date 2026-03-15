@@ -126,13 +126,16 @@ export default function PredictPage() {
   const max=pkg?.max||0;
   const left=max-used;
 
+  // Check time-based expiry on client side
+  const isExpired = hasPkg && gamePkg.expiresAt && new Date(gamePkg.expiresAt).getTime() < Date.now();
+  const validPkg = hasPkg && !isExpired;
+
   // Instant Virtual helpers
   const pendingUploads = uploads.filter(u=>u.status==="pending");
   const respondedUploads = uploads.filter(u=>u.status==="responded" && new Date(u.respondedAt||u.updatedAt).getTime() > Date.now() - 30*60*1000);
 
-  // User stays on page if they have active uploads even without package
-  const hasActiveUploads = isIV && (pendingUploads.length > 0 || respondedUploads.length > 0);
-  const canAccess = hasPkg || hasActiveUploads;
+  // Strict paywall: must have valid (non-expired) package — no bypass
+  const canAccess = validPkg;
 
   return(
     <div className="pg">
@@ -176,8 +179,8 @@ export default function PredictPage() {
         {!canAccess&&!loading&&(
           <div className="asu empty">
             <div style={{fontSize:56,marginBottom:12}}>{"\u{1F512}"}</div>
-            <div className="bv" style={{fontSize:28,color:"#F0F0F2",marginBottom:8}}>No Active Package</div>
-            <p style={{fontSize:14,marginBottom:24}}>Subscribe to {gm.name} to start.</p>
+            <div className="bv" style={{fontSize:28,color:"#F0F0F2",marginBottom:8}}>{isExpired ? "Package Expired" : "No Active Package"}</div>
+            <p style={{fontSize:14,marginBottom:24}}>{isExpired ? "Your package has expired. Subscribe again to continue." : `Subscribe to ${gm.name} to start.`}</p>
             <button className="btn" onClick={()=>router.push("/dashboard")} style={{background:"#0B9635",color:"#fff",maxWidth:260,margin:"0 auto"}}>{"\u2190"} Back to Games</button>
           </div>
         )}
@@ -186,18 +189,23 @@ export default function PredictPage() {
         {canAccess&&(
           <div className="asu">
             {/* Stats bar */}
-            {hasPkg?(
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
-                <div className="cd" style={{padding:14,textAlign:"center"}}><div className="lbl">CREDITS</div><div className="bv" style={{fontSize:24,color:"#0B9635"}}>{left}</div></div>
-                <div className="cd" style={{padding:14,textAlign:"center"}}><div className="lbl">PACKAGE</div><div className="bv" style={{fontSize:16,color:pkg.color}}>{pkg.icon} {pkg.name}</div></div>
-                <div className="cd" style={{padding:14,textAlign:"center"}}><div className="lbl">USED</div><div className="bv" style={{fontSize:24}}>{used}/{max}</div></div>
-              </div>
-            ):(
-              <div className="cd" style={{padding:14,textAlign:"center",marginBottom:20,borderColor:"#D4AF3730"}}>
-                <div style={{fontSize:11,fontWeight:700,color:"#D4AF37",letterSpacing:1}}>{pendingUploads.length>0?"\u23F3 ANALYSIS IN PROGRESS":"\u2705 PREDICTIONS DELIVERED"}</div>
-                <div style={{fontSize:12,color:"#555",marginTop:4}}>Credits used. {respondedUploads.length>0?"Viewing expires in 30 min.":"Your prediction is being prepared."}</div>
-              </div>
-            )}
+            {(()=>{
+              const daysLeft = gamePkg?.expiresAt ? Math.max(0, Math.ceil((new Date(gamePkg.expiresAt).getTime() - Date.now()) / (1000*60*60*24))) : null;
+              return (
+                <div style={{marginBottom:20}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                    <div className="cd" style={{padding:14,textAlign:"center"}}><div className="lbl">CREDITS</div><div className="bv" style={{fontSize:24,color:"#0B9635"}}>{left}</div></div>
+                    <div className="cd" style={{padding:14,textAlign:"center"}}><div className="lbl">PACKAGE</div><div className="bv" style={{fontSize:16,color:pkg.color}}>{pkg.icon} {pkg.name}</div></div>
+                    <div className="cd" style={{padding:14,textAlign:"center"}}><div className="lbl">USED</div><div className="bv" style={{fontSize:24}}>{used}/{max}</div></div>
+                  </div>
+                  {daysLeft !== null && (
+                    <div className="cd" style={{padding:"8px 14px",marginTop:8,textAlign:"center",borderColor:daysLeft<=3?"#E3172530":"#0B963520"}}>
+                      <span style={{fontSize:11,fontWeight:700,color:daysLeft<=3?"#E31725":daysLeft<=7?"#D4AF37":"#0B9635"}}>{daysLeft<=0?"EXPIRES TODAY":daysLeft===1?"1 DAY LEFT":`${daysLeft} DAYS LEFT`}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {error&&<div className="err">{"\u26A0"} {error}</div>}
 

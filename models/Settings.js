@@ -22,6 +22,10 @@ const settingsSchema = new mongoose.Schema({
   usdtErc20Address: { type: String, default: "" },
   btcAddress: { type: String, default: "" },
   cryptoEnabled: { type: Boolean, default: true },
+  // Package Duration (days)
+  goldDurationDays: { type: Number, default: 30 },
+  platinumDurationDays: { type: Number, default: 30 },
+  diamondDurationDays: { type: Number, default: 30 },
   // Contact
   whatsappNumber: { type: String, default: "" },
 }, { timestamps: true });

@@ -955,20 +955,20 @@ export default function AdminDash() {
             </div>
 
             <div style={{...card,borderColor:"#D4AF3720"}}><div style={{fontSize:12,fontWeight:700,color:"#D4AF37",marginBottom:14}}>🥇 GOLD PACKAGE</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>{[
-                {l:"Price (GH₵)",k:"goldPrice",type:"number"},{l:"Max Predictions",k:"goldMaxPreds",type:"number"},{l:"Odds Range",k:"goldOdds"},
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{[
+                {l:"Price (GH₵)",k:"goldPrice",type:"number"},{l:"Max Predictions",k:"goldMaxPreds",type:"number"},{l:"Odds Range",k:"goldOdds"},{l:"Duration (Days)",k:"goldDurationDays",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
             <div style={{...card,borderColor:"#94A7BD20"}}><div style={{fontSize:12,fontWeight:700,color:"#94A7BD",marginBottom:14}}>🥈 PLATINUM PACKAGE</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>{[
-                {l:"Price (GH₵)",k:"platinumPrice",type:"number"},{l:"Max Predictions",k:"platinumMaxPreds",type:"number"},{l:"Odds Range",k:"platinumOdds"},
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{[
+                {l:"Price (GH₵)",k:"platinumPrice",type:"number"},{l:"Max Predictions",k:"platinumMaxPreds",type:"number"},{l:"Odds Range",k:"platinumOdds"},{l:"Duration (Days)",k:"platinumDurationDays",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
             <div style={{...card,borderColor:"#7DD3E820"}}><div style={{fontSize:12,fontWeight:700,color:"#7DD3E8",marginBottom:14}}>💎 DIAMOND PACKAGE</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>{[
-                {l:"Price (GH₵)",k:"diamondPrice",type:"number"},{l:"Max Predictions",k:"diamondMaxPreds",type:"number"},{l:"Odds Range",k:"diamondOdds"},
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{[
+                {l:"Price (GH₵)",k:"diamondPrice",type:"number"},{l:"Max Predictions",k:"diamondMaxPreds",type:"number"},{l:"Odds Range",k:"diamondOdds"},{l:"Duration (Days)",k:"diamondDurationDays",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 

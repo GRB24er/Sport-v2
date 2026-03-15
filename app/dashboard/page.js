@@ -156,18 +156,23 @@ export default function Dashboard() {
   };
 
   const getGameButton = (game) => {
-    if (!game.live) return { text: "Coming Soon", style: { background: "transparent", color: "#444", border: "1px solid #1E2028", cursor: "default" } };
+    if (!game.live) return { text: "Coming Soon", style: { background: "transparent", color: "#444", border: "1px solid #1E2028", cursor: "default" }, daysLeft: null };
     if (gameHasPkg(game.id)) {
       const gPkg = getGamePkg(game.id);
       const p = PKGS.find(x => x.id === gPkg.package);
-      return { text: `${p?.icon||""} Play Now →`, style: { background: game.bg, color: "#fff", border: "none" } };
+      const daysLeft = gPkg.expiresAt ? Math.max(0, Math.ceil((new Date(gPkg.expiresAt).getTime() - Date.now()) / (1000*60*60*24))) : null;
+      // If expired, treat as no package
+      if (daysLeft !== null && daysLeft <= 0) {
+        return { text: "Package Expired — Renew", style: { background: "#E3172515", color: "#E31725", border: "1.5px solid #E3172530" }, daysLeft: 0 };
+      }
+      return { text: `${p?.icon||""} Play Now →`, style: { background: game.bg, color: "#fff", border: "none" }, daysLeft };
     }
     if (gameIsPending(game.id)) {
       const pending = getGamePending(game.id);
       const p = PKGS.find(x => x.id === pending.package);
-      return { text: `⏳ ${p?.name||""} Pending`, style: { background: "#D4AF3715", color: "#D4AF37", border: "1.5px solid #D4AF3730", cursor: "default" } };
+      return { text: `⏳ ${p?.name||""} Pending`, style: { background: "#D4AF3715", color: "#D4AF37", border: "1.5px solid #D4AF3730", cursor: "default" }, daysLeft: null };
     }
-    return { text: "Subscribe to Play", style: { background: "transparent", color: game.color, border: `1.5px solid ${game.color}35` } };
+    return { text: "Subscribe to Play", style: { background: "transparent", color: game.color, border: `1.5px solid ${game.color}35` }, daysLeft: null };
   };
 
   return (
@@ -342,6 +347,9 @@ export default function Dashboard() {
                   <div className="gc-tg">{g.tags.map(t=><span key={t} className="gc-t" style={{color:g.color,background:g.color+"12"}}>{t}</span>)}</div>
                 </div>
                 <div className="gc-bt" style={btn.style}>{btn.text}</div>
+                {btn.daysLeft !== null && btn.daysLeft > 0 && (
+                  <div style={{textAlign:"center",marginTop:6,fontSize:10,fontWeight:700,color:btn.daysLeft<=3?"#E31725":btn.daysLeft<=7?"#D4AF37":"#0B9635"}}>{btn.daysLeft===1?"1 day left":`${btn.daysLeft} days left`}</div>
+                )}
               </div>
               {pending && (
                 <div className="pend"><div className="pend-dot" /><span>⏳ {pendPkg?.icon} {pendPkg?.name} — Awaiting admin approval • Ref: {pending.referenceNumber}</span></div>

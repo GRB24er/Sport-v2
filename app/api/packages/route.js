@@ -6,6 +6,7 @@ import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
+import { getPackageDurations, calculateExpiresAt } from "@/lib/packageUtils";
 
 const PKG_PRICES_DEF = { gold: 250, platinum: 500, diamond: 1000 };
 const PKG_NAMES = { gold: "Gold", platinum: "Platinum", diamond: "Diamond" };
@@ -142,8 +143,10 @@ export async function PATCH(req) {
     const pkgPrice = PKG_PRICES[req2.package] || 0;
 
     if (action === "approve") {
+      const durations = await getPackageDurations();
+      const expiresAt = calculateExpiresAt(req2.package, durations[req2.package]);
       await User.updateOne({ _id: user._id }, {
-        $set: { [`gamePackages.${gameId}`]: { package: req2.package, predictionsUsed: 0, activatedAt: new Date() } },
+        $set: { [`gamePackages.${gameId}`]: { package: req2.package, predictionsUsed: 0, activatedAt: new Date(), expiresAt } },
         $unset: { [`pendingGamePackages.${gameId}`]: "" },
         $inc: { amountPaidGHS: pkgPrice },
       });

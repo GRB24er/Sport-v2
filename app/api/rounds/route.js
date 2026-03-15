@@ -11,6 +11,7 @@ const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
 const PKG_LIMITS_DEF = { gold: 1, platinum: 2, diamond: 4 };
 
 import Settings from "@/models/Settings";
+import { isPackageExpired } from "@/lib/packageUtils";
 
 async function getPkgLimits() {
   try {
@@ -131,7 +132,8 @@ export async function GET(req) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const gp = mToObj(user.gamePackages);
-    const subscribedGames = Object.keys(gp);
+    // Filter out expired packages
+    const subscribedGames = Object.keys(gp).filter(g => !isPackageExpired(gp[g]));
 
     if (subscribedGames.length === 0) {
       return NextResponse.json({ rounds: [], subscribed: false });
@@ -232,12 +234,18 @@ export async function PATCH(req) {
 
     if (!gamePkg) return NextResponse.json({ error: "No package for this game" }, { status: 403 });
 
+    // Check time-based expiry
+    if (isPackageExpired(gamePkg)) {
+      await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gameId}`]: "" } });
+      return NextResponse.json({ error: "EXPIRED", message: "Package expired. Subscribe again." }, { status: 403 });
+    }
+
     const maxPreds = PKG_LIMITS[gamePkg.package] || 1;
     const used = gamePkg.predictionsUsed || 0;
 
     if (used >= maxPreds) {
       await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gameId}`]: "" } });
-      return NextResponse.json({ error: "EXHAUSTED", message: "Package expired. Subscribe again." }, { status: 429 });
+      return NextResponse.json({ error: "EXHAUSTED", message: "All credits used. Subscribe again." }, { status: 429 });
     }
 
     // ATOMIC: Claim the round only if not already claimed (prevents race condition)
