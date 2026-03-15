@@ -106,7 +106,7 @@ export default function PredictPage() {
 
   if(status==="loading"||!session) return(
     <div style={{minHeight:"100vh",background:"#0B0D10",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{width:44,height:44,border:"3px solid #1E2028",borderTopColor:"#E31725",borderRadius:"50%",animation:"sp .8s linear infinite"}}/>
+      <div style={{width:44,height:44,border:"3px solid #1E2028",borderTopColor:"#0B9635",borderRadius:"50%",animation:"sp .8s linear infinite"}}/>
       <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -149,7 +149,7 @@ export default function PredictPage() {
 .lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:#444;text-transform:uppercase;margin-bottom:4px}
 .bv{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
 .btn{padding:12px 20px;border-radius:10px;border:none;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans';transition:all .15s;width:100%}.btn:active{transform:scale(.97)}.btn:disabled{opacity:.4;cursor:not-allowed}
-.err{background:#E3172510;border:1px solid #E3172520;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#E31725;font-weight:600}
+.err{background:#0B963510;border:1px solid #0B963520;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#0B9635;font-weight:600}
 .succ{background:#0B963510;border:1px solid #0B963520;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#0B9635;font-weight:600}
 .empty{text-align:center;padding:48px 20px;color:#444}
 .match{background:#0B0D10;border:1px solid #151820;border-radius:12px;padding:14px;margin-bottom:8px}
@@ -178,7 +178,7 @@ export default function PredictPage() {
             <div style={{fontSize:56,marginBottom:12}}>{"\u{1F512}"}</div>
             <div className="bv" style={{fontSize:28,color:"#F0F0F2",marginBottom:8}}>No Active Package</div>
             <p style={{fontSize:14,marginBottom:24}}>Subscribe to {gm.name} to start.</p>
-            <button className="btn" onClick={()=>router.push("/dashboard")} style={{background:"#E31725",color:"#fff",maxWidth:260,margin:"0 auto"}}>{"\u2190"} Back to Games</button>
+            <button className="btn" onClick={()=>router.push("/dashboard")} style={{background:"#0B9635",color:"#fff",maxWidth:260,margin:"0 auto"}}>{"\u2190"} Back to Games</button>
           </div>
         )}
 
@@ -244,7 +244,7 @@ export default function PredictPage() {
 
                     {left <= 0 && pendingUploads.length === 0 && respondedUploads.length === 0 && (
                       <div className="cd" style={{padding:20,textAlign:"center"}}>
-                        <div style={{fontSize:11,color:"#E31725",fontWeight:700}}>Credits exhausted. Subscribe again to upload more.</div>
+                        <div style={{fontSize:11,color:"#0B9635",fontWeight:700}}>Credits exhausted. Subscribe again to upload more.</div>
                       </div>
                     )}
 
@@ -305,7 +305,7 @@ export default function PredictPage() {
 
                               {u.adminNote&&<div style={{marginTop:8,padding:"8px 12px",background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:8,fontSize:11,color:"#D4AF37"}}>{"\u{1F4A1}"} {u.adminNote}</div>}
 
-                              {u.sportyBetLink&&<a href={u.sportyBetLink} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:10,padding:12,background:"#E3172510",border:"1px solid #E3172520",borderRadius:10,textAlign:"center",textDecoration:"none",fontSize:13,fontWeight:700,color:"#E31725"}}>Place Bet on SportyBet {"\u2192"}</a>}
+                              {u.sportyBetLink&&<a href={u.sportyBetLink} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:10,padding:12,background:"#0B963510",border:"1px solid #0B963520",borderRadius:10,textAlign:"center",textDecoration:"none",fontSize:13,fontWeight:700,color:"#0B9635"}}>Place Bet on SportyBet {"\u2192"}</a>}
                             </div>
                           </div>
                         ))}
@@ -326,14 +326,14 @@ export default function PredictPage() {
                   <div>
                     {rounds.length===0?(
                       <div className="empty">
-                        <div style={{width:64,height:64,borderRadius:16,background:"#E3172508",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
-                          <div style={{width:28,height:28,border:"3px solid #1E2028",borderTopColor:"#E31725",borderRadius:"50%",animation:"sp 1.5s linear infinite"}}/>
+                        <div style={{width:64,height:64,borderRadius:16,background:"#0B963508",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+                          <div style={{width:28,height:28,border:"3px solid #1E2028",borderTopColor:"#0B9635",borderRadius:"50%",animation:"sp 1.5s linear infinite"}}/>
                         </div>
                         <div style={{fontWeight:700,fontSize:16,color:"#F0F0F2",marginBottom:6}}>System Update in Progress</div>
                         <div style={{fontSize:13,lineHeight:1.6,maxWidth:300,margin:"0 auto",marginBottom:16}}>We're running a quick security patch. Predictions will be available shortly.</div>
-                        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#E3172508",padding:"8px 16px",borderRadius:8}}>
-                          <div style={{width:6,height:6,borderRadius:"50%",background:"#E31725",animation:"pu 1.5s infinite"}}/>
-                          <span style={{fontSize:11,color:"#E31725",fontWeight:700,letterSpacing:1}}>BACK IN 3-5 MINUTES</span>
+                        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#0B963508",padding:"8px 16px",borderRadius:8}}>
+                          <div style={{width:6,height:6,borderRadius:"50%",background:"#0B9635",animation:"pu 1.5s infinite"}}/>
+                          <span style={{fontSize:11,color:"#0B9635",fontWeight:700,letterSpacing:1}}>BACK IN 3-5 MINUTES</span>
                         </div>
                       </div>
                     ):(
@@ -350,7 +350,7 @@ export default function PredictPage() {
                                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                                     {isClaimed&&<span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:"#0B963518",color:"#0B9635"}}>{"\u2705"} UNLOCKED</span>}
                                     {!isClaimed&&!isLocked&&<span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:gm.color+"15",color:gm.color}}>{"\u{1F525}"} NEW</span>}
-                                    {isLocked&&<span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:"#E3172515",color:"#E31725"}}>{"\u{1F512}"} LOCKED</span>}
+                                    {isLocked&&<span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:"#0B963515",color:"#0B9635"}}>{"\u{1F512}"} LOCKED</span>}
                                   </div>
                                   {isClaimed?<span className="bv" style={{fontSize:22,color:"#0B9635"}}>{r.totalOdd}x</span>:<span className="bv" style={{fontSize:20,color:"#444"}}>???</span>}
                                 </div>
@@ -381,7 +381,7 @@ export default function PredictPage() {
                                     </div>
                                   ))}
                                   {r.adminNote&&<div style={{marginTop:8,padding:"8px 12px",background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:8,fontSize:11,color:"#D4AF37"}}>{"\u{1F4A1}"} {r.adminNote}</div>}
-                                  {r.sportyBetLink&&<a href={r.sportyBetLink} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:8,padding:12,background:"#E3172510",border:"1px solid #E3172520",borderRadius:10,textAlign:"center",textDecoration:"none",fontSize:13,fontWeight:700,color:"#E31725"}}>Place Bet on SportyBet {"\u2192"}</a>}
+                                  {r.sportyBetLink&&<a href={r.sportyBetLink} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:8,padding:12,background:"#0B963510",border:"1px solid #0B963520",borderRadius:10,textAlign:"center",textDecoration:"none",fontSize:13,fontWeight:700,color:"#0B9635"}}>Place Bet on SportyBet {"\u2192"}</a>}
                                 </div>
                               )}
 

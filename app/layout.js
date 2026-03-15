@@ -19,9 +19,9 @@ export default function RootLayout({ children }) {
             position="top-right"
             toastOptions={{
               style: {
-                background: "#22262D",
+                background: "#12141A",
                 color: "#EEEFF1",
-                border: "1px solid #343944",
+                border: "1px solid #1E2028",
                 fontFamily: "'Barlow Condensed', sans-serif",
               },
               success: {

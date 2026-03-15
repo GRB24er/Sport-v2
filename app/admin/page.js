@@ -275,15 +275,15 @@ export default function AdminDash() {
   };
   const TABS = [
     {id:"overview",icon:"📊",label:"Overview"},
-    {id:"pending",icon:"⏳",label:"Pending",cnt:pending.length,cc:"#E31725"},
+    {id:"pending",icon:"⏳",label:"Pending",cnt:pending.length,cc:"#0B9635"},
     {id:"pkg-requests",icon:"📦",label:"Packages",cnt:pkgRequests.length,cc:pkgRequests.length>0?"#D4AF37":null},
     {id:"users",icon:"👥",label:"Users",cnt:users.length},
     {id:"uploads",icon:"📸",label:"Uploads",cnt:uploads.filter(u=>u.status==="pending").length},
     {id:"rounds",icon:"🎮",label:"eGames Rounds",cnt:preds.filter(r=>r.status==="live").length,cc:preds.filter(r=>r.status==="live").length>0?"#8B5CF6":null},
     {id:"referrals",icon:"🔗",label:"Referrals",cnt:totalReferrals},
-    {id:"notifs",icon:"🔔",label:"Alerts",cnt:unread,cc:unread>0?"#E31725":null},
+    {id:"notifs",icon:"🔔",label:"Alerts",cnt:unread,cc:unread>0?"#0B9635":null},
     {id:"payments",icon:"💳",label:"Payments"},
-    {id:"support",icon:"💬",label:"Support",cnt:supportUnread,cc:supportUnread>0?"#E31725":null},
+    {id:"support",icon:"💬",label:"Support",cnt:supportUnread,cc:supportUnread>0?"#0B9635":null},
     {id:"broadcast",icon:"📢",label:"Broadcast",cnt:broadcasts.length},
     {id:"settings",icon:"⚙️",label:"Settings"},
   ];
@@ -331,11 +331,11 @@ export default function AdminDash() {
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <button className="aham" style={{display:"none",background:"none",border:"none",color:"#F0F0F2",fontSize:22,cursor:"pointer"}} onClick={()=>setSidebar(!sidebar)}>☰</button>
           <a href="/"><img src="/images/logo.png" alt="VB" style={{height:LOGO,width:"auto",objectFit:"contain"}} /></a>
-          <span style={{fontSize:10,fontWeight:700,letterSpacing:1.5,padding:"4px 12px",borderRadius:8,background:"#E3172518",color:"#E31725"}}>ADMIN</span>
+          <span style={{fontSize:10,fontWeight:700,letterSpacing:1.5,padding:"4px 12px",borderRadius:8,background:"#0B963518",color:"#0B9635"}}>ADMIN</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button onClick={load} disabled={refreshing} style={{...btn("#151820","#888"),opacity:refreshing?.5:1}}>{refreshing?"⟳":"↻"} Refresh</button>
-          <div style={{position:"relative",cursor:"pointer"}} onClick={()=>setTab("notifs")}><span style={{fontSize:18}}>🔔</span>{unread>0&&<span style={{position:"absolute",top:-4,right:-6,background:"#E31725",color:"#fff",fontSize:8,fontWeight:800,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}</div>
+          <div style={{position:"relative",cursor:"pointer"}} onClick={()=>setTab("notifs")}><span style={{fontSize:18}}>🔔</span>{unread>0&&<span style={{position:"absolute",top:-4,right:-6,background:"#0B9635",color:"#fff",fontSize:8,fontWeight:800,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}</div>
           <button onClick={()=>signOut({callbackUrl:"/"})} style={{...btn("transparent","#555"),border:"1px solid #1E2028"}}>Logout</button>
         </div>
       </header>
@@ -346,7 +346,7 @@ export default function AdminDash() {
         {/* SIDEBAR */}
         <aside className={`aside ${sidebar?"open":""}`} style={{width:220,background:"#0E1015",borderRight:"1px solid #151820",padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column"}}>
           <nav style={{flex:1}}>{TABS.map(t=>(
-            <div key={t.id} onClick={()=>{setTab(t.id);setSidebar(false)}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 20px",cursor:"pointer",borderLeft:tab===t.id?"3px solid #E31725":"3px solid transparent",background:tab===t.id?"#E3172508":"transparent",color:tab===t.id?"#F0F0F2":"#555",fontSize:13,fontWeight:500,transition:"all .15s"}}>
+            <div key={t.id} onClick={()=>{setTab(t.id);setSidebar(false)}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 20px",cursor:"pointer",borderLeft:tab===t.id?"3px solid #0B9635":"3px solid transparent",background:tab===t.id?"#0B963508":"transparent",color:tab===t.id?"#F0F0F2":"#555",fontSize:13,fontWeight:500,transition:"all .15s"}}>
               <span style={{fontSize:16,width:22,textAlign:"center"}}>{t.icon}</span><span>{t.label}</span>
               {t.cnt!=null&&<span style={{marginLeft:"auto",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10,background:(t.cc||"#555")+"18",color:t.cc||"#555"}}>{t.cnt}</span>}
             </div>
@@ -415,9 +415,9 @@ export default function AdminDash() {
 
             {/* Pending alerts */}
             {pending.length>0&&(<div>
-              <div style={{...section,color:"#E31725"}}>🔴 PENDING APPROVALS ({pending.length})</div>
+              <div style={{...section,color:"#0B9635"}}>🔴 PENDING APPROVALS ({pending.length})</div>
               {pending.map(u=>{const p=getPkg(u.package);return(
-                <div key={u._id} className="as" style={{...card,borderColor:"#E3172520",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+                <div key={u._id} className="as" style={{...card,borderColor:"#0B963520",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:15}}>{u.name} <span style={{color:"#444",fontWeight:400,fontSize:12}}>({u.phone})</span></div>
                     <div style={{fontSize:12,color:"#444",marginTop:2}}>
@@ -427,7 +427,7 @@ export default function AdminDash() {
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     <button onClick={()=>approve(u._id)} style={btn("#0B9635")}>✓ Approve</button>
-                    <button onClick={()=>reject(u._id)} style={btn("#AE0C0E")}>✗ Reject</button>
+                    <button onClick={()=>reject(u._id)} style={btn("#076B25")}>✗ Reject</button>
                   </div>
                 </div>
               );})}
@@ -439,7 +439,7 @@ export default function AdminDash() {
               {pkgRequests.slice(0,3).map((r,i)=>{const pc={gold:"#D4AF37",platinum:"#94A7BD",diamond:"#7DD3E8"};const pi={gold:"🥇",platinum:"🥈",diamond:"💎"};const gc={["instant-virtual"]:"⚽",egames:"🎮",["sporty-hero"]:"🦸",["spin-bottle"]:"🍾"};return(
                 <div key={r.userId+r.gameId} className="as" style={{...card,borderColor:(pc[r.packageId]||"#D4AF37")+"25",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
                   <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15}}>{r.userName} <span style={{color:"#444",fontWeight:400,fontSize:12}}>({r.userPhone})</span></div><div style={{fontSize:12,color:"#444",marginTop:2}}>{gc[r.gameId]||"🎮"} <strong>{r.gameName}</strong> → {pi[r.packageId]} <span style={{color:pc[r.packageId],fontWeight:700}}>{r.packageName}</span> — GH₵{r.packagePrice} • {r.providerName} • Ref: <span style={{color:"#0B9635",fontFamily:"monospace",fontWeight:700}}>{r.referenceNumber}</span>{r.senderName?` • From: ${r.senderName}`:""}</div></div>
-                  <div style={{display:"flex",gap:6}}><button onClick={()=>approvePkg(r.userId,r.gameId)} style={btn("#0B9635")}>✓ Activate</button><button onClick={()=>rejectPkg(r.userId,r.gameId)} style={btn("#AE0C0E")}>✗</button></div>
+                  <div style={{display:"flex",gap:6}}><button onClick={()=>approvePkg(r.userId,r.gameId)} style={btn("#0B9635")}>✓ Activate</button><button onClick={()=>rejectPkg(r.userId,r.gameId)} style={btn("#076B25")}>✗</button></div>
                 </div>
               );})}
               {pkgRequests.length>3&&<button style={{...btn("#151820","#888"),width:"100%",marginTop:4}} onClick={()=>setTab("pkg-requests")}>View all {pkgRequests.length} requests</button>}
@@ -467,7 +467,7 @@ export default function AdminDash() {
               {notifs.slice(0,5).map((n,i)=>(
                 <div key={n._id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:i<4?"1px solid #151820":"none"}}>
                   <span>{n.type==="payment"?"💰":n.type==="manual_prediction"?"🤖":n.type==="prediction_request"?"📸":"🔔"}</span>
-                  {!n.read&&<span style={badge("#E3172518","#E31725")}>NEW</span>}
+                  {!n.read&&<span style={badge("#0B963518","#0B9635")}>NEW</span>}
                   <div style={{flex:1,fontSize:13,color:"#888"}}>{n.message}</div>
                   <span style={{fontSize:10,color:"#333",whiteSpace:"nowrap"}}>{tAgo(n.createdAt)}</span>
                 </div>
@@ -483,7 +483,7 @@ export default function AdminDash() {
             {pending.length===0?(
               <div style={{...card,textAlign:"center",padding:48,color:"#444",border:"1px solid #0B963520"}}><div style={{fontSize:48,marginBottom:8}}>✅</div><div style={{fontWeight:700,fontSize:16}}>All caught up!</div><div style={{fontSize:13,marginTop:4}}>No pending payments</div></div>
             ):pending.map((u,i)=>{const p=getPkg(u.package);return(
-              <div key={u._id} className={`as d${Math.min(i+1,5)}`} style={{...card,borderColor:"#E3172520"}}>
+              <div key={u._id} className={`as d${Math.min(i+1,5)}`} style={{...card,borderColor:"#0B963520"}}>
                 <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:17,marginBottom:8}}>{u.name}</div>
@@ -505,7 +505,7 @@ export default function AdminDash() {
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
                     <button onClick={()=>approve(u._id)} style={{...btn("#0B9635"),padding:"14px 24px",fontSize:14}}>✓ Verify & Approve</button>
-                    <button onClick={()=>reject(u._id)} style={{...btn("#AE0C0E"),padding:"14px 24px",fontSize:14}}>✗ Reject</button>
+                    <button onClick={()=>reject(u._id)} style={{...btn("#076B25"),padding:"14px 24px",fontSize:14}}>✗ Reject</button>
                   </div>
                 </div>
               </div>
@@ -517,7 +517,7 @@ export default function AdminDash() {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
               <h1 style={{...val,fontSize:28}}>All Users ({filtered.length})</h1>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["all","approved","pending","rejected"].map(f=>(
-                <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:filter===f?"1px solid #E31725":"1px solid #1E2028",background:filter===f?"#E31725":"transparent",color:filter===f?"#fff":"#555",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>{f} ({f==="all"?users.length:users.filter(u=>u.status===f).length})</button>
+                <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:filter===f?"1px solid #0B9635":"1px solid #1E2028",background:filter===f?"#0B9635":"transparent",color:filter===f?"#fff":"#555",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>{f} ({f==="all"?users.length:users.filter(u=>u.status===f).length})</button>
               ))}</div>
             </div>
             <div className="atable-wrap">
@@ -528,14 +528,14 @@ export default function AdminDash() {
                     <td style={{padding:"10px 8px",fontWeight:600}}>{u.name}</td>
                     <td style={{padding:"10px 8px",color:"#555"}}>{u.phone}</td>
                     <td style={{padding:"10px 8px"}}><span style={badge(p.color+"18",p.color)}>{p.icon} {p.name}</span></td>
-                    <td style={{padding:"10px 8px"}}><span style={{color:(u.predictionsUsed||0)>=p.max?"#E31725":"#0B9635",fontWeight:700}}>{u.predictionsUsed||0}/{p.max}</span></td>
+                    <td style={{padding:"10px 8px"}}><span style={{color:(u.predictionsUsed||0)>=p.max?"#0B9635":"#0B9635",fontWeight:700}}>{u.predictionsUsed||0}/{p.max}</span></td>
                     <td style={{padding:"10px 8px",color:"#0B9635",fontWeight:700}}>{fG(rev)}</td>
                     <td style={{padding:"10px 8px",fontFamily:"monospace",fontSize:11,color:"#555"}}>{u.referralCode||"—"}</td>
-                    <td style={{padding:"10px 8px"}}><span style={badge(u.status==="approved"?"#0B963518":u.status==="pending"?"#D4AF3718":"#E3172518",u.status==="approved"?"#0B9635":u.status==="pending"?"#D4AF37":"#E31725")}>{u.status}</span></td>
+                    <td style={{padding:"10px 8px"}}><span style={badge(u.status==="approved"?"#0B963518":u.status==="pending"?"#D4AF3718":"#0B963518",u.status==="approved"?"#0B9635":u.status==="pending"?"#D4AF37":"#0B9635")}>{u.status}</span></td>
                     <td style={{padding:"10px 8px",fontSize:11,color:"#444"}}>{tAgo(u.createdAt)}</td>
                     <td style={{padding:"10px 8px"}}><div style={{display:"flex",gap:4}}>
                       {u.status==="pending"&&<button onClick={e=>{e.stopPropagation();approve(u._id)}} style={btn("#0B9635")}>Approve</button>}
-                      <button onClick={e=>{e.stopPropagation();remove(u._id)}} style={btn("#AE0C0E")}>Delete</button>
+                      <button onClick={e=>{e.stopPropagation();remove(u._id)}} style={btn("#076B25")}>Delete</button>
                     </div></td>
                   </tr>
                 )})}</tbody>
@@ -626,7 +626,7 @@ export default function AdminDash() {
                       ):(
                         <div style={{display:"flex",gap:6}}>
                           <button onClick={()=>{setRespForm(up._id);setExpanded(up._id);}} style={{flex:2,padding:10,background:"#0B9635",border:"none",borderRadius:10,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>📝 Enter Prediction</button>
-                          <button onClick={async()=>{await fetch("/api/uploads",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({uploadId:up._id,action:"reject",adminNote:"Unclear screenshot"})});load();}} style={{flex:1,padding:10,background:"#E3172510",border:"1px solid #E3172520",borderRadius:10,color:"#E31725",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>✗ Reject</button>
+                          <button onClick={async()=>{await fetch("/api/uploads",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({uploadId:up._id,action:"reject",adminNote:"Unclear screenshot"})});load();}} style={{flex:1,padding:10,background:"#0B963510",border:"1px solid #0B963520",borderRadius:10,color:"#0B9635",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>✗ Reject</button>
                           <button onClick={async()=>{if(confirm("Delete this upload?")){await fetch("/api/uploads",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({uploadId:up._id,action:"delete"})});load();}}} style={{padding:10,background:"#151820",border:"1px solid #1E2028",borderRadius:10,color:"#555",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>🗑</button>
                         </div>
                       )}
@@ -681,7 +681,7 @@ export default function AdminDash() {
                     <span style={{fontSize:12,color:"#555"}}>{r.matches?.length||0} matches • {(r.claimedBy||[]).length} claims</span>
                   </div>
                   <div style={{display:"flex",gap:6}}>
-                    {r.status==="live"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"close"})});load();}} style={{padding:"6px 12px",background:"#E3172510",border:"1px solid #E3172520",borderRadius:6,color:"#E31725",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Close</button>}
+                    {r.status==="live"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"close"})});load();}} style={{padding:"6px 12px",background:"#0B963510",border:"1px solid #0B963520",borderRadius:6,color:"#0B9635",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Close</button>}
                     {r.status==="draft"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"publish",expiresInMinutes:60})});load();}} style={{padding:"6px 12px",background:"#8B5CF6",border:"none",borderRadius:6,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Publish</button>}
                     <button onClick={async()=>{if(confirm("Delete this round?")){await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"delete"})});load();}}} style={{padding:"6px 12px",background:"#151820",border:"1px solid #1E2028",borderRadius:6,color:"#555",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>🗑</button>
                   </div>
@@ -704,7 +704,7 @@ export default function AdminDash() {
 
             <div className="agrid3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
               <div style={stat}><div style={lbl}>TOTAL REFERRALS</div><div style={{...val,fontSize:28}}>{refData.stats?.totalReferrals||0}</div><div style={{fontSize:10,color:"#444"}}>{refData.stats?.approvedReferrals||0} approved</div></div>
-              <div style={stat}><div style={lbl}>TOTAL PAID OUT</div><div style={{...val,fontSize:28,color:"#E31725"}}>{fG(refData.stats?.totalBonusPaid||0)}</div><div style={{fontSize:10,color:"#444"}}>To all referrers</div></div>
+              <div style={stat}><div style={lbl}>TOTAL PAID OUT</div><div style={{...val,fontSize:28,color:"#0B9635"}}>{fG(refData.stats?.totalBonusPaid||0)}</div><div style={{fontSize:10,color:"#444"}}>To all referrers</div></div>
               <div style={stat}><div style={lbl}>OUTSTANDING</div><div style={{...val,fontSize:28,color:"#D4AF37"}}>{fG(refData.stats?.totalOutstanding||0)}</div><div style={{fontSize:10,color:"#444"}}>Current balances</div></div>
             </div>
 
@@ -752,15 +752,15 @@ export default function AdminDash() {
               <h1 style={{...val,fontSize:28}}>Notifications ({notifs.length})</h1>
               <div style={{display:"flex",gap:6}}>
                 <button onClick={markRead} style={{...btn("transparent","#F0F0F2"),border:"1px solid #2A2D34"}}>Mark All Read</button>
-                <button onClick={async()=>{if(confirm("Delete ALL notifications?")){await fetch("/api/notifications",{method:"DELETE"});load();}}} style={{...btn("#151820","#E31725"),border:"1px solid #E3172520"}}>🗑 Delete All</button>
+                <button onClick={async()=>{if(confirm("Delete ALL notifications?")){await fetch("/api/notifications",{method:"DELETE"});load();}}} style={{...btn("#151820","#0B9635"),border:"1px solid #0B963520"}}>🗑 Delete All</button>
               </div>
             </div>
             {notifs.length===0?<div style={{textAlign:"center",padding:48,color:"#444"}}>No notifications</div>:
             notifs.map((n,i)=>(
-              <div key={n._id||i} className={`as d${Math.min(i+1,5)}`} style={{borderRadius:12,padding:"14px 18px",marginBottom:8,border:"1px solid "+(n.read?"#151820":"#E3172518"),background:n.read?"#12141A":"#E3172506"}}>
+              <div key={n._id||i} className={`as d${Math.min(i+1,5)}`} style={{borderRadius:12,padding:"14px 18px",marginBottom:8,border:"1px solid "+(n.read?"#151820":"#0B963518"),background:n.read?"#12141A":"#0B963506"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                   <span>{n.type==="payment"?"💰":n.type==="manual_prediction"?"🤖":n.type==="prediction_request"?"📸":n.type==="approval"?"✅":n.type==="rejection"?"❌":"🔔"}</span>
-                  {!n.read&&<span style={badge("#E3172518","#E31725")}>NEW</span>}
+                  {!n.read&&<span style={badge("#0B963518","#0B9635")}>NEW</span>}
                   <span style={{fontSize:11,color:"#333"}}>{tAgo(n.createdAt)}</span>
                 </div>
                 <div style={{fontSize:13,color:"#888",lineHeight:1.5}}>{n.message}</div>
@@ -787,7 +787,7 @@ export default function AdminDash() {
               return(
                 <div key={r.userId+r.gameId} className={"as d"+Math.min(i+1,5)} style={{...card,borderColor:c+"30"}}>
                   <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-                    <div style={{width:44,height:44,borderRadius:12,background:"#E31725",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:15,color:"#fff",flexShrink:0}}>{r.userName?.slice(0,2).toUpperCase()}</div>
+                    <div style={{width:44,height:44,borderRadius:12,background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:15,color:"#fff",flexShrink:0}}>{r.userName?.slice(0,2).toUpperCase()}</div>
                     <div style={{flex:1}}><div style={{fontWeight:700,fontSize:16}}>{r.userName}</div><div style={{fontSize:12,color:"#555"}}>{r.userPhone} • {r.userEmail||""}</div></div>
                     <div style={{textAlign:"right"}}><span style={{fontSize:10,fontWeight:700,padding:"4px 12px",borderRadius:8,background:c+"18",color:c,letterSpacing:1}}>{pi[r.packageId]} {r.packageName}</span><div style={{fontSize:10,color:"#888",marginTop:4}}>{gc[r.gameId]||"🎮"} {r.gameName}</div></div>
                   </div>
@@ -819,7 +819,7 @@ export default function AdminDash() {
 
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>approvePkg(r.userId,r.gameId)} style={{flex:2,...btn("#0B9635"),padding:"14px",fontSize:14}}>✓ Activate {r.gameName} {r.packageName}</button>
-                    <button onClick={()=>rejectPkg(r.userId,r.gameId)} style={{flex:1,...btn("#AE0C0E"),padding:"14px",fontSize:14}}>✗ Reject</button>
+                    <button onClick={()=>rejectPkg(r.userId,r.gameId)} style={{flex:1,...btn("#076B25"),padding:"14px",fontSize:14}}>✗ Reject</button>
                   </div>
                 </div>
               );
@@ -873,7 +873,7 @@ export default function AdminDash() {
             {activeChat?(<div>
               <button onClick={()=>{setActiveChat(null);setChatMessages([]);setChatUser(null)}} style={{...btn("#151820","#888"),marginBottom:16}}>← Back to threads</button>
               {chatUser&&<div style={{...card,display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-                <div style={{width:40,height:40,borderRadius:10,background:"#E31725",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",fontSize:13}}>{chatUser.name?.slice(0,2).toUpperCase()}</div>
+                <div style={{width:40,height:40,borderRadius:10,background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",fontSize:13}}>{chatUser.name?.slice(0,2).toUpperCase()}</div>
                 <div><div style={{fontWeight:700}}>{chatUser.name}</div><div style={{fontSize:12,color:"#444"}}>{chatUser.phone} • {chatUser.email}</div></div>
               </div>}
 
@@ -897,12 +897,12 @@ export default function AdminDash() {
             </div>):(<div>
               {supportThreads.length===0?<div style={{...card,textAlign:"center",padding:48,color:"#444"}}><div style={{fontSize:48,marginBottom:8}}>💬</div>No support messages yet</div>:
               supportThreads.map((t,i)=>(
-                <div key={t._id||i} style={{...card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:t.unread>0?"#E3172520":"#151820"}} onClick={()=>openChat(t._id)}>
+                <div key={t._id||i} style={{...card,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",borderColor:t.unread>0?"#0B963520":"#151820"}} onClick={()=>openChat(t._id)}>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{width:36,height:36,borderRadius:8,background:"#E31725",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",fontSize:11}}>{t.user?.name?.slice(0,2).toUpperCase()||"??"}</div>
+                    <div style={{width:36,height:36,borderRadius:8,background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#fff",fontSize:11}}>{t.user?.name?.slice(0,2).toUpperCase()||"??"}</div>
                     <div><div style={{fontWeight:700}}>{t.user?.name||"User"} <span style={{color:"#444",fontSize:11}}>({t.user?.phone})</span></div><div style={{fontSize:12,color:"#555",marginTop:2}}>{t.lastMessage?.slice(0,60)}{t.lastMessage?.length>60?"...":""}</div></div>
                   </div>
-                  <div style={{textAlign:"right"}}>{t.unread>0&&<span style={badge("#E3172518","#E31725")}>{t.unread} new</span>}<div style={{fontSize:10,color:"#333",marginTop:4}}>{tAgo(t.lastDate)}</div></div>
+                  <div style={{textAlign:"right"}}>{t.unread>0&&<span style={badge("#0B963518","#0B9635")}>{t.unread} new</span>}<div style={{fontSize:10,color:"#333",marginTop:4}}>{tAgo(t.lastDate)}</div></div>
                 </div>
               ))}
             </div>)}
@@ -1005,14 +1005,14 @@ export default function AdminDash() {
           <div style={{background:"#12141A",border:"1px solid #1E2028",borderRadius:20,padding:32,maxWidth:480,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"scaleIn .3s cubic-bezier(.16,1,.3,1)",position:"relative"}} onClick={e=>e.stopPropagation()}>
             <button onClick={()=>setUserModal(null)} style={{position:"absolute",top:14,right:14,background:"none",border:"none",color:"#555",fontSize:20,cursor:"pointer"}}>✕</button>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-              <div style={{width:48,height:48,borderRadius:12,background:"#E31725",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:16,color:"#fff"}}>{u.avatar||u.name?.slice(0,2)}</div>
-              <div><div style={{fontWeight:700,fontSize:18}}>{u.name}</div><span style={badge(u.status==="approved"?"#0B963518":"#E3172518",u.status==="approved"?"#0B9635":"#E31725")}>{u.status}</span></div>
+              <div style={{width:48,height:48,borderRadius:12,background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:16,color:"#fff"}}>{u.avatar||u.name?.slice(0,2)}</div>
+              <div><div style={{fontWeight:700,fontSize:18}}>{u.name}</div><span style={badge(u.status==="approved"?"#0B963518":"#0B963518",u.status==="approved"?"#0B9635":"#0B9635")}>{u.status}</span></div>
             </div>
             <div style={{background:"#0B0D10",borderRadius:12,padding:18,marginBottom:16}}>
               {[
                 {l:"Phone",v:u.phone},{l:"Email",v:u.email||"—"},{l:"SportyBet",v:u.sportyBetId||"—",c:"#0B9635"},
                 {l:"Package",v:`${p.icon} ${p.name} — ${p.max} predictions`,c:p.color},
-                {l:"Predictions Used",v:`${u.predictionsUsed||0}/${p.max}${isLocked?" (LOCKED)":""}`,c:isLocked?"#E31725":"#0B9635"},
+                {l:"Predictions Used",v:`${u.predictionsUsed||0}/${p.max}${isLocked?" (LOCKED)":""}`,c:isLocked?"#0B9635":"#0B9635"},
                 {l:"Revenue",v:fB(rev),c:"#0B9635"},
                 {l:"Referral Code",v:u.referralCode||"Not assigned yet"},{l:"Referred By",v:u.referredBy||"None"},{l:"Referral Balance",v:fB(u.referralBalance||0),c:"#0B9635"},{l:"Total Earned",v:fB(u.referralTotalEarned||0),c:"#0B9635"},{l:"Referral Count",v:String(u.referralCount||0)},
                 {l:"Reference",v:u.referenceNumber||"—",m:true},{l:"Provider",v:u.paymentProvider||"—"},
@@ -1032,7 +1032,7 @@ export default function AdminDash() {
                 {isLocked&&<button onClick={()=>upgradeUser(u._id,u.package)} style={{...btn("#0B9635"),flex:1,padding:12,fontSize:12}}>♻️ Reset Preds</button>}
                 {!u.referralCode&&<button onClick={()=>generateCode(u._id)} style={{...btn("#D4AF37","#000"),flex:1,padding:12,fontSize:12}}>🔗 Generate Code</button>}
               </>}
-              <button onClick={()=>remove(u._id)} style={{...btn("#AE0C0E"),padding:12,fontSize:12}}>🗑 Delete</button>
+              <button onClick={()=>remove(u._id)} style={{...btn("#076B25"),padding:12,fontSize:12}}>🗑 Delete</button>
             </div>
           </div>
         </div>

@@ -27,6 +27,10 @@ const uploadSchema = new mongoose.Schema(
     adminNote: { type: String, default: "" },
     sportyBetLink: { type: String, default: "" },
     respondedAt: { type: Date, default: null },
+    // AI fields
+    aiPowered: { type: Boolean, default: false },
+    aiConfidence: { type: Number, default: 0 },
+    analysis: { type: String, default: "" },
   },
   { timestamps: true }
 );

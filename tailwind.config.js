@@ -8,17 +8,18 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          red: "#E31725",
-          crimson: "#AE0C0E",
+          primary: "#0B9635",
           green: "#0B9635",
+          "green-dark": "#076B25",
           gold: "#D4AF37",
+          "gold-light": "#F0D060",
           platinum: "#A0B2C6",
           diamond: "#B9F2FF",
         },
         dark: {
-          bg: "#1A1D22",
-          card: "#22262D",
-          input: "#2A2E36",
+          bg: "#0B0D10",
+          card: "#12141A",
+          input: "#1A1D22",
           slate: "#343944",
         },
         steel: "#5B5C5F",

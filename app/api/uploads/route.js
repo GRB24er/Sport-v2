@@ -84,8 +84,36 @@ export async function POST(req) {
       forAdmin: true, relatedUserId: user._id,
     });
 
+    // Auto-analyze with Gemini AI if API key is configured
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const aiUrl = new URL("/api/predictions/ai", req.url);
+        const aiRes = await fetch(aiUrl.toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            cookie: req.headers.get("cookie") || "",
+          },
+          body: JSON.stringify({ imageBase64, uploadId: upload._id.toString() }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          // Upload was already updated by the AI route
+          return NextResponse.json({
+            message: "AI prediction ready!",
+            upload: { _id: upload._id, status: "responded", createdAt: upload.createdAt },
+            prediction: aiData.prediction,
+            predictionsUsed: newUsed, maxPredictions: maxPreds, exhausted,
+            aiPowered: true,
+          });
+        }
+      } catch (aiErr) {
+        console.error("Auto-AI failed, falling back to manual:", aiErr.message);
+      }
+    }
+
     return NextResponse.json({
-      message: "Screenshot uploaded!",
+      message: "Screenshot uploaded! AI is analyzing...",
       upload: { _id: upload._id, status: "pending", createdAt: upload.createdAt },
       predictionsUsed: newUsed, maxPredictions: maxPreds, exhausted,
     });

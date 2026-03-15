@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 const LOGO_H = 90;
 const R = 0.077;
-const DEF_FEE = 50;
+const DEF_FEE = 250;
 
 const DEF_PROVS = [
   { id:"mtn", name:"MTN Mobile Money", short:"MTN MoMo", number:"0547610318", acct:"Abel Afriyie", color:"#FFC300", dark:"#B38F00", bg:"linear-gradient(135deg,#FFC300,#FFD700)", icon:"📱", dial:"*170#", steps:["Dial *170# on your MTN line","Select 1 → Transfer Money","Select 1 → MoMo User","Enter the number shown above","Enter the exact amount","Add reference as note","Confirm name matches","Enter PIN to complete"] },
@@ -92,7 +92,7 @@ export default function SignupPage() {
 .su-root{min-height:100vh;background:#0B0D10;color:#F0F0F2;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;position:relative;overflow-x:hidden}
 .su-bg{position:fixed;inset:0;z-index:0;overflow:hidden}
 .su-bg-orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.15;animation:orb 20s ease-in-out infinite}
-.su-bg-orb:nth-child(1){width:500px;height:500px;background:#E31725;top:-20%;left:-10%;animation-delay:0s}
+.su-bg-orb:nth-child(1){width:500px;height:500px;background:#0B9635;top:-20%;left:-10%;animation-delay:0s}
 .su-bg-orb:nth-child(2){width:400px;height:400px;background:#0B9635;bottom:-15%;right:-10%;animation-delay:-7s}
 .su-bg-orb:nth-child(3){width:300px;height:300px;background:#D4AF37;top:50%;left:50%;animation-delay:-14s}
 @keyframes orb{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.1)}66%{transform:translate(-30px,20px) scale(.9)}}
@@ -100,10 +100,10 @@ export default function SignupPage() {
 .su-cnt{position:relative;z-index:1;flex:1;display:flex;align-items:center;justify-content:center;padding:32px 20px}
 .su-card{width:100%;max-width:480px;position:relative}
 .su-inner{background:rgba(18,20,26,.85);backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.06);border-radius:28px;padding:40px 32px;position:relative;overflow:hidden}
-.su-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#E31725,#D4AF37,#0B9635,transparent)}
+.su-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0B9635,#D4AF37,#0B9635,transparent)}
 .su-logo{display:flex;justify-content:center;margin-bottom:28px}
 .su-prog{display:flex;gap:4px;margin-bottom:28px}
-.su-bar{flex:1;height:3px;border-radius:2px;background:#1E2028;transition:all .4s cubic-bezier(.4,0,.2,1)}.su-bar.on{background:linear-gradient(90deg,#E31725,#D4AF37)}
+.su-bar{flex:1;height:3px;border-radius:2px;background:#1E2028;transition:all .4s cubic-bezier(.4,0,.2,1)}.su-bar.on{background:linear-gradient(90deg,#0B9635,#D4AF37)}
 .su-step{text-align:center;margin-bottom:8px}
 .su-step span{font-size:10px;font-weight:700;letter-spacing:3px;color:#333;text-transform:uppercase;background:rgba(227,23,37,.08);padding:4px 16px;border-radius:20px;border:1px solid rgba(227,23,37,.12)}
 .su-h{font-size:32px;font-weight:800;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;text-align:center;margin-bottom:4px}
@@ -113,17 +113,17 @@ export default function SignupPage() {
 .su-fee-u{font-size:12px;color:#555}
 .su-field{margin-bottom:16px}
 .su-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#444;margin-bottom:6px}
-.su-inp{width:100%;padding:14px 16px;background:rgba(11,13,16,.6);border:1px solid #1E2028;border-radius:12px;color:#F0F0F2;font-size:14px;font-family:'DM Sans';outline:none;transition:all .2s}.su-inp:focus{border-color:#E31725;box-shadow:0 0 0 3px rgba(227,23,37,.08)}.su-inp::placeholder{color:#2A2D34}
+.su-inp{width:100%;padding:14px 16px;background:rgba(11,13,16,.6);border:1px solid #1E2028;border-radius:12px;color:#F0F0F2;font-size:14px;font-family:'DM Sans';outline:none;transition:all .2s}.su-inp:focus{border-color:#0B9635;box-shadow:0 0 0 3px rgba(227,23,37,.08)}.su-inp::placeholder{color:#2A2D34}
 .su-pw{position:relative}.su-pw .su-inp{padding-right:56px}.su-pw-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:12px;font-family:'DM Sans';font-weight:600}
-.su-err{background:rgba(227,23,37,.06);border:1px solid rgba(227,23,37,.15);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#E31725;font-weight:600;display:flex;align-items:center;gap:8px}
+.su-err{background:rgba(227,23,37,.06);border:1px solid rgba(227,23,37,.15);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0B9635;font-weight:600;display:flex;align-items:center;gap:8px}
 .su-btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans';transition:all .2s;position:relative;overflow:hidden}
 .su-btn:disabled{opacity:.4;cursor:not-allowed}.su-btn:active{transform:scale(.98)}
-.su-btn-r{background:#E31725;color:#fff}.su-btn-r:hover:not(:disabled){box-shadow:0 8px 30px rgba(227,23,37,.3);transform:translateY(-1px)}
+.su-btn-r{background:#0B9635;color:#fff}.su-btn-r:hover:not(:disabled){box-shadow:0 8px 30px rgba(227,23,37,.3);transform:translateY(-1px)}
 .su-btn-g{background:#0B9635;color:#fff}.su-btn-g:hover:not(:disabled){box-shadow:0 8px 30px rgba(11,150,53,.3);transform:translateY(-1px)}
 .su-btn-o{background:transparent;color:#888;border:1px solid #1E2028}.su-btn-o:hover{border-color:#555;color:#F0F0F2}
 .su-row{display:flex;gap:10px}.su-row>:first-child{flex:1}.su-row>:last-child{flex:2}
 .su-foot{text-align:center;margin-top:20px;font-size:13px;color:#444}
-.su-link{color:#E31725;font-weight:700;text-decoration:none}
+.su-link{color:#0B9635;font-weight:700;text-decoration:none}
 
 /* PAYMENT PROVIDER CARDS */
 .pv-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}

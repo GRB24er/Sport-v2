@@ -22,7 +22,7 @@ const DEF_PROVS = [
 const GAMES = [
   { id:"instant-virtual", name:"Instant Virtual", sub:"Football Virtual", icon:"⚽", logo:"/images/logoo.png", color:"#0B9635", bg:"linear-gradient(135deg,#0B9635,#054d18)", desc:"Upload your SportyBet screenshot and get winning predictions.", tags:["Live","7 Markets","Up to 50x"], live:true, badge:"🔥 POPULAR" },
   { id:"egames", name:"eGames", sub:"Virtual Casino", icon:"🎮", color:"#8B5CF6", bg:"linear-gradient(135deg,#8B5CF6,#5B21B6)", desc:"AI predictions for virtual casino and electronic games. Beat the odds.", tags:["Casino","Virtual","Smart Picks"], live:true, badge:"🆕 NEW" },
-  { id:"sporty-hero", name:"SportyHero", sub:"Hero Predictions", icon:"🦸", color:"#E31725", bg:"", desc:"Hero predictions coming soon.", tags:[], live:false },
+  { id:"sporty-hero", name:"SportyHero", sub:"Hero Predictions", icon:"🦸", color:"#0B9635", bg:"", desc:"Hero predictions coming soon.", tags:[], live:false },
   { id:"spin-bottle", name:"Spin & Win", sub:"Spin The Bottle", icon:"🍾", color:"#D4AF37", bg:"", desc:"We're building something special.", tags:[], live:false },
 ];
 
@@ -89,7 +89,7 @@ export default function Dashboard() {
 
   if (status === "loading" || !session) return (
     <div style={{minHeight:"100vh",background:"#0B0D10",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{width:44,height:44,border:"3px solid #1E2028",borderTopColor:"#E31725",borderRadius:"50%",animation:"sp .8s linear infinite"}} />
+      <div style={{width:44,height:44,border:"3px solid #1E2028",borderTopColor:"#0B9635",borderRadius:"50%",animation:"sp .8s linear infinite"}} />
       <style>{`@keyframes sp{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -160,20 +160,20 @@ export default function Dashboard() {
 .asu{animation:su .5s cubic-bezier(.16,1,.3,1) both}.ad1{animation-delay:.05s}.ad2{animation-delay:.1s}.ad3{animation-delay:.15s}.ad4{animation-delay:.2s}
 .vbg{position:fixed;inset:0;z-index:0;background-image:url(/backdrop.png);background-size:380px auto;background-repeat:repeat;opacity:.02;pointer-events:none}
 .hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #151820;background:#0B0D10F0;backdrop-filter:blur(20px);position:sticky;top:0;z-index:90}
-.hav{width:38px;height:38px;border-radius:10px;background:#E31725;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;cursor:pointer;transition:all .15s;border:2px solid transparent;flex-shrink:0}.hav:hover,.hav.on{border-color:#E31725;box-shadow:0 0 0 3px #E3172520}
+.hav{width:38px;height:38px;border-radius:10px;background:#0B9635;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;cursor:pointer;transition:all .15s;border:2px solid transparent;flex-shrink:0}.hav:hover,.hav.on{border-color:#0B9635;box-shadow:0 0 0 3px #0B963520}
 .hr{display:flex;align-items:center;gap:8px}
 .pf{position:absolute;top:62px;right:12px;width:300px;background:#12141A;border:1px solid #1E2028;border-radius:16px;z-index:100;overflow:hidden;animation:sd .2s cubic-bezier(.16,1,.3,1);box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .pf-t{padding:18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #151820;background:#0E101540}
-.pf-av{width:44px;height:44px;border-radius:12px;background:#E31725;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
+.pf-av{width:44px;height:44px;border-radius:12px;background:#0B9635;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0}
 .pf-nm{font-weight:700;font-size:15px}.pf-em{font-size:11px;color:#555;margin-top:1px;word-break:break-all}
 .pf-bd{padding:14px 18px}
 .pf-r{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #15182060}.pf-r:last-child{border-bottom:none}
 .pf-rl{font-size:11px;color:#444;font-weight:600}.pf-rv{font-size:13px;font-weight:700;text-align:right}
 .cb{margin-top:6px;padding:14px;background:#0B0D10;border:1px solid #1E2028;border-radius:10px}
-.cb-no{color:#E31725;font-size:12px;font-weight:600;line-height:1.5}
+.cb-no{color:#0B9635;font-size:12px;font-weight:600;line-height:1.5}
 .cb-v{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#0B9635}
 .cb-btn{margin-top:8px;width:100%;padding:10px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans';transition:all .15s}.cb-btn:active{transform:scale(.97)}
-.pf-out{width:100%;padding:11px;background:#E3172508;border:1px solid #E3172518;border-radius:10px;color:#E31725;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans';margin-top:8px}
+.pf-out{width:100%;padding:11px;background:#0B963508;border:1px solid #0B963518;border-radius:10px;color:#0B9635;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans';margin-top:8px}
 .mn{max-width:540px;margin:0 auto;padding:28px 20px;position:relative;z-index:1}
 .mt{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;margin-bottom:4px}
 .ms{font-size:14px;color:#555;line-height:1.5;margin-bottom:24px}
@@ -203,7 +203,7 @@ export default function Dashboard() {
 .mm-bar{width:36px;height:4px;border-radius:2px;background:#2A2D34;margin:0 auto 16px}
 .mm-ti{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;text-align:center;margin-bottom:3px}
 .mm-su{font-size:13px;color:#555;text-align:center;margin-bottom:18px}
-.mm-st{display:flex;gap:4px;margin-bottom:18px}.mm-st div{flex:1;height:3px;border-radius:2px;background:#1E2028;transition:background .3s}.mm-st div.on{background:#E31725}
+.mm-st{display:flex;gap:4px;margin-bottom:18px}.mm-st div{flex:1;height:3px;border-radius:2px;background:#1E2028;transition:background .3s}.mm-st div.on{background:#0B9635}
 .pkg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
 .pk{border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;transition:all .2s;border:2px solid #1E2028;background:#0B0D10}.pk:hover{border-color:#2A2D34}.pk.on{border-width:2px}
 .pk-i{font-size:22px;margin-bottom:2px}.pk-n{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px}.pk-o{font-size:9px;color:#555;margin-bottom:4px}.pk-p{font-family:'Bebas Neue',sans-serif;font-size:18px}.pk-u{font-size:9px;color:#444}.pk-d{font-size:9px;color:#666;margin-top:2px}.pk-c{margin-top:3px;font-size:9px;font-weight:700}
@@ -213,8 +213,8 @@ export default function Dashboard() {
 .det{background:#0B0D10;border:1px solid #151820;border-radius:12px;padding:14px;margin-bottom:16px;animation:fi .3s}
 .det-l{font-size:10px;font-weight:700;letter-spacing:2px;margin-bottom:8px}.det-f{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;color:#666}
 .det-t{display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:10px;border-top:1px solid #1E2028}
-.inp{width:100%;padding:14px 16px;background:#0B0D10;border:1px solid #1E2028;border-radius:10px;color:#F0F0F2;font-size:14px;font-family:'DM Sans';outline:none}.inp:focus{border-color:#E31725;box-shadow:0 0 0 3px #E3172510}.inp::placeholder{color:#2A2D34}
-.err{background:#E3172510;border:1px solid #E3172520;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#E31725;font-weight:600}
+.inp{width:100%;padding:14px 16px;background:#0B0D10;border:1px solid #1E2028;border-radius:10px;color:#F0F0F2;font-size:14px;font-family:'DM Sans';outline:none}.inp:focus{border-color:#0B9635;box-shadow:0 0 0 3px #0B963510}.inp::placeholder{color:#2A2D34}
+.err{background:#0B963510;border:1px solid #0B963520;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#0B9635;font-weight:600}
 .ab{width:100%;padding:15px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans';transition:all .15s}.ab:disabled{cursor:not-allowed;opacity:.4}.ab:not(:disabled):active{transform:scale(.97)}
 .bb{width:100%;padding:12px;border-radius:10px;border:1px solid #1E2028;background:transparent;color:#888;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans';margin-top:8px}
 .warn{background:#1E202830;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:#555;line-height:1.6}
@@ -233,7 +233,7 @@ export default function Dashboard() {
         <div className="hr" style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{position:"relative",cursor:"pointer"}} onClick={()=>{setNotifOpen(!notifOpen);setProfileOpen(false);}}>
             <span style={{fontSize:20}}>🔔</span>
-            {notifs.filter(n=>!n.read).length>0&&<div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#E31725",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:900,color:"#fff"}}>{notifs.filter(n=>!n.read).length}</div>}
+            {notifs.filter(n=>!n.read).length>0&&<div style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:900,color:"#fff"}}>{notifs.filter(n=>!n.read).length}</div>}
           </div>
           <div className={`hav ${profileOpen?"on":""}`} onClick={()=>{setProfileOpen(!profileOpen);setNotifOpen(false);}}>{initials}</div>
         </div>
@@ -249,7 +249,7 @@ export default function Dashboard() {
           </div>
           {notifs.length===0?<div style={{padding:32,textAlign:"center",color:"#444",fontSize:13}}>No notifications yet</div>:
           notifs.slice(0,20).map((n,i)=>(
-            <div key={n._id||i} style={{padding:"12px 16px",borderBottom:"1px solid #15182050",background:n.read?"transparent":"#E3172504"}}>
+            <div key={n._id||i} style={{padding:"12px 16px",borderBottom:"1px solid #15182050",background:n.read?"transparent":"#0B963504"}}>
               <div style={{fontSize:13,color:n.read?"#666":"#F0F0F2",lineHeight:1.5}}>{n.message}</div>
               <div style={{fontSize:10,color:"#333",marginTop:4}}>{new Date(n.createdAt).toLocaleString()}</div>
             </div>
@@ -350,7 +350,7 @@ export default function Dashboard() {
                   <div className="pk-i">{p.icon}</div><div className="pk-n" style={{color:p.color}}>{p.name}</div><div className="pk-o">{p.odds}</div><div className="pk-p">{fG(p.price)}</div><div className="pk-u">≈ ${(p.price*R).toFixed(2)}</div><div className="pk-d">{p.max} pred{p.max>1?"s":""}</div>{s&&<div className="pk-c" style={{color:p.color}}>✓</div>}
                 </div>);})}</div>
               {selPkg&&(()=>{const p=PKGS.find(x=>x.id===selPkg);return(<div className="det"><div className="det-l" style={{color:p.color}}>{p.icon} {p.name.toUpperCase()}</div>{p.features.map(f=><div key={f} className="det-f"><span style={{color:"#0B9635"}}>✓</span>{f}</div>)}<div className="det-t"><span style={{color:"#555",fontWeight:600}}>Total</span><span style={{fontFamily:"'Bebas Neue'",fontSize:22,color:"#0B9635",letterSpacing:1}}>{fB(p.price)}</span></div></div>);})()}
-              <button className="ab" disabled={!selPkg} onClick={()=>setStep(2)} style={{background:selPkg?"#E31725":"#151820",color:selPkg?"#fff":"#444"}}>Continue to Payment →</button>
+              <button className="ab" disabled={!selPkg} onClick={()=>setStep(2)} style={{background:selPkg?"#0B9635":"#151820",color:selPkg?"#fff":"#444"}}>Continue to Payment →</button>
             </div>)}
 
             {step===2 && !submitted && (()=>{const p=PKGS.find(x=>x.id===selPkg);return(<div style={{animation:"fi .2s"}}>
@@ -362,7 +362,7 @@ export default function Dashboard() {
                   <div className="pv-d" style={{background:pv.color}} /><div><div className="pv-n" style={{color:s?pv.color:"#F0F0F2"}}>{pv.name}</div><div className="pv-nu">Number: {pv.num} • {pv.acct||"VirtualBet GH"}</div></div>{s&&<div className="pv-c" style={{color:pv.color}}>✓</div>}
                 </div>);})}</div>
               {selProv&&(()=>{const pv=PROVS.find(x=>x.id===selProv);return(<div style={{background:pv.color+"08",border:`1px solid ${pv.color}20`,borderRadius:10,padding:14,marginBottom:14,animation:"fi .2s"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:pv.color,marginBottom:6}}>SEND TO</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontWeight:700,fontSize:16}}>{pv.num}</span><button onClick={()=>navigator.clipboard?.writeText(pv.num.replace(/-/g,""))} style={{background:pv.color+"15",color:pv.color,border:"none",padding:"4px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Copy</button></div><div style={{fontSize:12,color:"#555"}}>Name: <strong style={{color:"#888"}}>{pv.acct||"VirtualBet GH"}</strong> • Amount: <strong style={{color:"#0B9635"}}>{fG(p.price)}</strong></div></div>);})()}
-              <button className="ab" disabled={!selProv} onClick={()=>setStep(3)} style={{background:selProv?"#E31725":"#151820",color:selProv?"#fff":"#444"}}>I've Sent Payment →</button>
+              <button className="ab" disabled={!selProv} onClick={()=>setStep(3)} style={{background:selProv?"#0B9635":"#151820",color:selProv?"#fff":"#444"}}>I've Sent Payment →</button>
               <button className="bb" onClick={()=>setStep(1)}>← Back</button>
             </div>);})()}
 
@@ -387,7 +387,7 @@ export default function Dashboard() {
                 ))}
               </div>
               <p style={{fontSize:12,color:"#555",marginBottom:16}}>Package activates within 5–30 minutes after verification.</p>
-              <button className="ab" onClick={closeSub} style={{background:"#E31725",color:"#fff"}}>Done</button>
+              <button className="ab" onClick={closeSub} style={{background:"#0B9635",color:"#fff"}}>Done</button>
             </div>);})()}
           </div>
         </div>
