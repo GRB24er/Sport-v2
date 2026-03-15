@@ -125,6 +125,68 @@ textarea:focus {
   border: 1px solid rgba(212, 175, 55, 0.3);
   box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
 }
+.glow-red {
+  border: 1px solid rgba(227, 23, 37, 0.3);
+  box-shadow: 0 0 15px rgba(227, 23, 37, 0.1);
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(18, 20, 26, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.glass-strong {
+  background: rgba(18, 20, 26, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Gradient borders */
+.border-gradient-green {
+  position: relative;
+}
+.border-gradient-green::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #0b9635, #d4af37, #0b9635, transparent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Animated gradient background */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Smooth hover transitions */
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+.animate-float {
+  animation: float-subtle 3s ease-in-out infinite;
+}
+
+/* Crypto badge pulse */
+@keyframes crypto-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(247, 147, 26, 0.4); }
+  50% { opacity: 0.9; box-shadow: 0 0 0 8px rgba(247, 147, 26, 0); }
+}
+.crypto-badge {
+  animation: crypto-pulse 2s infinite;
+}
 
 /* Toast overrides */
 .toast-custom {
@@ -142,3 +204,23 @@ textarea:focus {
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
 }
+
+/* Premium number counter animation */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+  animation: count-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }

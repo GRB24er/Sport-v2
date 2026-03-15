@@ -10,7 +10,7 @@ const gamePackageSchema = new mongoose.Schema({
 const pendingRequestSchema = new mongoose.Schema({
   package: { type: String, enum: ["gold", "platinum", "diamond"], required: true },
   referenceNumber: { type: String, required: true },
-  paymentProvider: { type: String, required: true },
+  paymentProvider: { type: String, required: true }, // "mtn", "telecel", "airteltigo", "usdt_trc20", "usdt_erc20", "btc"
   senderName: { type: String, default: "" },
   date: { type: Date, default: Date.now },
 }, { _id: false });

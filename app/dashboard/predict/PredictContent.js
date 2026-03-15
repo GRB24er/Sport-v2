@@ -277,9 +277,41 @@ export default function PredictPage() {
                     {respondedUploads.length > 0 && (
                       <div>
                         <div className="lbl" style={{marginBottom:8,marginTop:16}}>YOUR PREDICTIONS ({respondedUploads.length})</div>
-                        {respondedUploads.map(u=>(
-                          <div key={u._id} className="cd asu ad2" style={{borderColor:"#0B963520"}}>
+                        {respondedUploads.map(u=>{
+                          const conf = u.aiConfidence || 0;
+                          const confColor = conf >= 80 ? "#0B9635" : conf >= 65 ? "#D4AF37" : "#E31725";
+                          const riskColors = { low: "#0B9635", medium: "#D4AF37", high: "#E31725" };
+                          const riskLabels = { low: "LOW RISK", medium: "MEDIUM RISK", high: "HIGH RISK" };
+                          return (
+                          <div key={u._id} className="cd asu ad2" style={{borderColor:"#0B963520",overflow:"hidden"}}>
+                            {/* AI Header with confidence */}
+                            {u.aiPowered && (
+                              <div style={{background:"linear-gradient(135deg,#0B963510,#D4AF3708)",padding:"12px 16px",borderBottom:"1px solid #15182050",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                  <span style={{fontSize:14}}>{"\u{1F916}"}</span>
+                                  <span style={{fontSize:10,fontWeight:700,color:"#0B9635",letterSpacing:1}}>GEMINI AI PREDICTION</span>
+                                </div>
+                                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                  {u.riskLevel && <span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:(riskColors[u.riskLevel]||"#D4AF37")+"15",color:riskColors[u.riskLevel]||"#D4AF37"}}>{riskLabels[u.riskLevel]||"MEDIUM"}</span>}
+                                  {conf > 0 && <span style={{fontSize:11,fontWeight:800,color:confColor}}>{conf}%</span>}
+                                </div>
+                              </div>
+                            )}
+
                             <div style={{padding:16}}>
+                              {/* Confidence meter */}
+                              {conf > 0 && (
+                                <div style={{marginBottom:14}}>
+                                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                                    <span style={{fontSize:10,color:"#444",fontWeight:600}}>AI Confidence</span>
+                                    <span style={{fontSize:12,fontWeight:800,color:confColor}}>{conf}%</span>
+                                  </div>
+                                  <div style={{height:4,background:"#1E2028",borderRadius:2,overflow:"hidden"}}>
+                                    <div style={{height:"100%",width:`${conf}%`,background:`linear-gradient(90deg,${confColor},${confColor}CC)`,borderRadius:2,transition:"width 1s ease"}} />
+                                  </div>
+                                </div>
+                              )}
+
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                                 <span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:"#0B963518",color:"#0B9635"}}>{"\u2705"} READY — {u.matches?.length||0} MATCHES</span>
                                 <div className="bv" style={{fontSize:24,color:"#0B9635"}}>{u.totalOdd}x</div>
@@ -293,22 +325,40 @@ export default function PredictPage() {
                                   </div>
                                   {m.picks?.map((pk,pi)=>(
                                     <div key={pi} className="pick">
-                                      <div>
+                                      <div style={{flex:1}}>
                                         <div style={{fontSize:10,color:"#444",fontWeight:700}}>{pk.market}</div>
                                         <div style={{fontSize:15,fontWeight:800,marginTop:2}}>{pk.pick}</div>
+                                        {pk.reasoning && <div style={{fontSize:10,color:"#555",marginTop:3,lineHeight:1.4}}>{pk.reasoning}</div>}
                                       </div>
-                                      <span style={{color:"#0B9635",fontWeight:700,fontSize:14}}>{pk.odd}x</span>
+                                      <div style={{textAlign:"right",flexShrink:0}}>
+                                        <span style={{color:"#0B9635",fontWeight:700,fontSize:14}}>{pk.odd}x</span>
+                                        {pk.confidence > 0 && <div style={{fontSize:9,color:pk.confidence>=80?"#0B9635":pk.confidence>=65?"#D4AF37":"#E31725",fontWeight:700,marginTop:2}}>{pk.confidence}%</div>}
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
                               ))}
+
+                              {/* AI Analysis */}
+                              {u.analysis && (
+                                <div style={{marginTop:10,padding:"10px 14px",background:"linear-gradient(135deg,#0B963508,#D4AF3706)",border:"1px solid #0B963515",borderRadius:10}}>
+                                  <div style={{fontSize:9,fontWeight:700,color:"#0B9635",letterSpacing:1,marginBottom:4}}>{"\u{1F9E0}"} AI ANALYSIS</div>
+                                  <div style={{fontSize:11,color:"#888",lineHeight:1.6}}>{u.analysis}</div>
+                                </div>
+                              )}
+
+                              {/* Tips */}
+                              {u.tips && (
+                                <div style={{marginTop:8,padding:"8px 12px",background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:8,fontSize:11,color:"#D4AF37"}}>{"\u{1F4A1}"} {u.tips}</div>
+                              )}
 
                               {u.adminNote&&<div style={{marginTop:8,padding:"8px 12px",background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:8,fontSize:11,color:"#D4AF37"}}>{"\u{1F4A1}"} {u.adminNote}</div>}
 
                               {u.sportyBetLink&&<a href={u.sportyBetLink} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:10,padding:12,background:"#0B963510",border:"1px solid #0B963520",borderRadius:10,textAlign:"center",textDecoration:"none",fontSize:13,fontWeight:700,color:"#0B9635"}}>Place Bet on SportyBet {"\u2192"}</a>}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 

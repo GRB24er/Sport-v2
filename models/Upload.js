@@ -4,6 +4,8 @@ const pickSchema = new mongoose.Schema({
   market: { type: String, required: true },
   pick: { type: String, required: true },
   odd: { type: Number, default: 1.5 },
+  confidence: { type: Number, default: 0 },
+  reasoning: { type: String, default: "" },
 }, { _id: false });
 
 const matchSchema = new mongoose.Schema({
@@ -31,6 +33,8 @@ const uploadSchema = new mongoose.Schema(
     aiPowered: { type: Boolean, default: false },
     aiConfidence: { type: Number, default: 0 },
     analysis: { type: String, default: "" },
+    riskLevel: { type: String, enum: ["low", "medium", "high", ""], default: "" },
+    tips: { type: String, default: "" },
   },
   { timestamps: true }
 );

@@ -972,22 +972,38 @@ export default function AdminDash() {
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
-            <div style={{...card,borderColor:"#FFC30020"}}><div style={{fontSize:12,fontWeight:700,color:"#FFC300",marginBottom:14}}>💳 MTN MOBILE MONEY</div>
+            {/* MERCHANT MOMO */}
+            <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>📱 MERCHANT MOBILE MONEY (Recommended)</div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Set a single merchant number that works across all networks. If set, this overrides per-network numbers below.</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+                {l:"Merchant Number",k:"merchantMomoNumber"},{l:"Merchant Name",k:"merchantMomoName"},
+              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} placeholder={f.k==="merchantMomoNumber"?"e.g. 0547610318":"e.g. VirtualBet GH"} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
+            </div>
+
+            <div style={{...card,borderColor:"#FFC30020"}}><div style={{fontSize:12,fontWeight:700,color:"#FFC300",marginBottom:14}}>💳 MTN MOBILE MONEY {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,opacity:settingsForm.merchantMomoNumber?.5:1}}>{[
                 {l:"Number",k:"mtnNumber"},{l:"Account Name",k:"mtnName"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
-            <div style={{...card,borderColor:"#E4052120"}}><div style={{fontSize:12,fontWeight:700,color:"#E40521",marginBottom:14}}>💳 TELECEL CASH</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+            <div style={{...card,borderColor:"#E4052120"}}><div style={{fontSize:12,fontWeight:700,color:"#E40521",marginBottom:14}}>💳 TELECEL CASH {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,opacity:settingsForm.merchantMomoNumber?.5:1}}>{[
                 {l:"Number",k:"telecelNumber"},{l:"Account Name",k:"telecelName"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
-            <div style={{...card,borderColor:"#0056A320"}}><div style={{fontSize:12,fontWeight:700,color:"#0056A3",marginBottom:14}}>💳 AIRTELTIGO MONEY</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+            <div style={{...card,borderColor:"#0056A320"}}><div style={{fontSize:12,fontWeight:700,color:"#0056A3",marginBottom:14}}>💳 AIRTELTIGO MONEY {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,opacity:settingsForm.merchantMomoNumber?.5:1}}>{[
                 {l:"Number",k:"airteltigoNumber"},{l:"Account Name",k:"airteltigoName"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
+            </div>
+
+            {/* CRYPTO WALLETS */}
+            <div style={{...card,borderColor:"#F7931A30"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#F7931A"}}>₿ CRYPTOCURRENCY WALLETS</div><label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}><span style={{fontSize:11,color:"#555"}}>Enable Crypto</span><div onClick={()=>setSettingsForm(s=>({...s,cryptoEnabled:!s.cryptoEnabled}))} style={{width:36,height:20,borderRadius:10,background:settingsForm.cryptoEnabled!==false?"#0B9635":"#1E2028",cursor:"pointer",position:"relative",transition:"all .2s"}}><div style={{width:16,height:16,borderRadius:8,background:"#fff",position:"absolute",top:2,left:settingsForm.cryptoEnabled!==false?18:2,transition:"left .2s"}} /></div></label></div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Add your crypto wallet addresses. Users will see these as payment options during signup and package purchase.</p>
+              <div style={{marginBottom:12}}><label style={{...lbl,display:"block",marginBottom:4}}>USDT Wallet (TRC20 — Tron)</label><input value={settingsForm.usdtTrc20Address||""} onChange={e=>setSettingsForm(s=>({...s,usdtTrc20Address:e.target.value}))} placeholder="e.g. TN8s3f8dNz..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #26A17B30",borderRadius:8,color:"#26A17B",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
+              <div style={{marginBottom:12}}><label style={{...lbl,display:"block",marginBottom:4}}>USDT Wallet (ERC20 — Ethereum)</label><input value={settingsForm.usdtErc20Address||""} onChange={e=>setSettingsForm(s=>({...s,usdtErc20Address:e.target.value}))} placeholder="e.g. 0x742d35Cc..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #627EEA30",borderRadius:8,color:"#627EEA",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
+              <div><label style={{...lbl,display:"block",marginBottom:4}}>Bitcoin (BTC) Address</label><input value={settingsForm.btcAddress||""} onChange={e=>setSettingsForm(s=>({...s,btcAddress:e.target.value}))} placeholder="e.g. bc1q5d9r3..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #F7931A30",borderRadius:8,color:"#F7931A",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
             </div>
 
             <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>📱 WHATSAPP</div>

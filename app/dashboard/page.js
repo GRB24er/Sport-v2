@@ -14,9 +14,14 @@ const DEF_PKGS = [
 ];
 
 const DEF_PROVS = [
-  { id:"mtn", name:"MTN MoMo", color:"#FFC300", num:"0XX-XXX-XXXX", acct:"", refLabel:"TRANSACTION CODE", refPlaceholder:"e.g. 8374652910" },
-  { id:"telecel", name:"Telecel Cash", color:"#E40521", num:"0XX-XXX-XXXX", acct:"", refLabel:"TRANSACTION ID", refPlaceholder:"e.g. 000012345678" },
-  { id:"airteltigo", name:"AirtelTigo", color:"#0056A3", num:"0XX-XXX-XXXX", acct:"", refLabel:"REFERENCE NUMBER", refPlaceholder:"e.g. REF-123456" },
+  { id:"mtn", name:"MTN MoMo", color:"#FFC300", num:"0XX-XXX-XXXX", acct:"", refLabel:"TRANSACTION CODE", refPlaceholder:"e.g. 8374652910", type:"momo" },
+  { id:"telecel", name:"Telecel Cash", color:"#E40521", num:"0XX-XXX-XXXX", acct:"", refLabel:"TRANSACTION ID", refPlaceholder:"e.g. 000012345678", type:"momo" },
+  { id:"airteltigo", name:"AirtelTigo", color:"#0056A3", num:"0XX-XXX-XXXX", acct:"", refLabel:"REFERENCE NUMBER", refPlaceholder:"e.g. REF-123456", type:"momo" },
+];
+const DEF_CRYPTO_PROVS = [
+  { id:"usdt_trc20", name:"USDT (TRC20)", color:"#26A17B", refLabel:"TRANSACTION HASH (TxID)", refPlaceholder:"e.g. 0x7a8b9c...", type:"crypto", network:"Tron (TRC20)", icon:"₮" },
+  { id:"usdt_erc20", name:"USDT (ERC20)", color:"#627EEA", refLabel:"TRANSACTION HASH (TxID)", refPlaceholder:"e.g. 0x7a8b9c...", type:"crypto", network:"Ethereum (ERC20)", icon:"₮" },
+  { id:"btc", name:"Bitcoin (BTC)", color:"#F7931A", refLabel:"TRANSACTION HASH (TxID)", refPlaceholder:"e.g. 3J98t1Wp...", type:"crypto", network:"Bitcoin Network", icon:"₿" },
 ];
 
 const GAMES = [
@@ -81,11 +86,26 @@ export default function Dashboard() {
   PKGS[1].features = [`${PKGS[1].max} Rounds (${PKGS[1].max*3} Matches)`, `${PKGS[1].odds} Range`, "Priority Support", "Weekly Tips"];
   PKGS[2].features = [`${PKGS[2].max} Rounds (${PKGS[2].max*3} Matches)`, `${PKGS[2].odds} Range`, "24/7 Support", "Daily Accumulators"];
 
-  const PROVS = [
+  // MoMo providers — use merchant number if set
+  const merchantNum = ss.merchantMomoNumber;
+  const merchantName = ss.merchantMomoName || "VirtualBet GH";
+  const MOMO_PROVS = merchantNum ? [
+    { ...DEF_PROVS[0], num: merchantNum, acct: merchantName },
+    { ...DEF_PROVS[1], num: merchantNum, acct: merchantName },
+    { ...DEF_PROVS[2], num: merchantNum, acct: merchantName },
+  ] : [
     { ...DEF_PROVS[0], num: ss.mtnNumber || DEF_PROVS[0].num, acct: ss.mtnName || "" },
     { ...DEF_PROVS[1], num: ss.telecelNumber || DEF_PROVS[1].num, acct: ss.telecelName || "" },
     { ...DEF_PROVS[2], num: ss.airteltigoNumber || DEF_PROVS[2].num, acct: ss.airteltigoName || "" },
   ];
+  // Crypto providers from settings
+  const cryptoEnabled = ss.cryptoEnabled !== false;
+  const CRYPTO_PROVS = !cryptoEnabled ? [] : [
+    ss.usdtTrc20Address ? { ...DEF_CRYPTO_PROVS[0], address: ss.usdtTrc20Address } : null,
+    ss.usdtErc20Address ? { ...DEF_CRYPTO_PROVS[1], address: ss.usdtErc20Address } : null,
+    ss.btcAddress ? { ...DEF_CRYPTO_PROVS[2], address: ss.btcAddress } : null,
+  ].filter(Boolean);
+  const PROVS = [...MOMO_PROVS, ...CRYPTO_PROVS];
 
   if (status === "loading" || !session) return (
     <div style={{minHeight:"100vh",background:"#0B0D10",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -353,24 +373,26 @@ export default function Dashboard() {
               <button className="ab" disabled={!selPkg} onClick={()=>setStep(2)} style={{background:selPkg?"#0B9635":"#151820",color:selPkg?"#fff":"#444"}}>Continue to Payment →</button>
             </div>)}
 
-            {step===2 && !submitted && (()=>{const p=PKGS.find(x=>x.id===selPkg);return(<div style={{animation:"fi .2s"}}>
+            {step===2 && !submitted && (()=>{const p=PKGS.find(x=>x.id===selPkg);const [payType,setPayType]=React.useState||useState;const _pt=typeof window!=="undefined"&&window._dashPayTab||"momo";return(<div style={{animation:"fi .2s"}}>
               <div style={{textAlign:"center",marginBottom:16}}><div style={{fontSize:32,marginBottom:4}}>💳</div><div className="mm-ti">Payment</div><p className="mm-su">Send <strong style={{color:"#0B9635"}}>{fB(p.price)}</strong> for {subModal.icon} {subModal.name}</p></div>
               <div style={{background:"#0B0D10",border:"1px solid #151820",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><span style={{fontSize:11,color:"#555"}}>{subModal.icon} {subModal.name}:</span> <span style={{fontWeight:700,color:p.color}}>{p.icon} {p.name}</span></div><span style={{fontFamily:"'Bebas Neue'",fontSize:18,color:"#0B9635"}}>{fG(p.price)}</span></div>
+              {/* Payment type tabs */}
+              {CRYPTO_PROVS.length>0&&(<div style={{display:"flex",gap:4,marginBottom:14,background:"#0B0D10",borderRadius:8,padding:3,border:"1px solid #1E2028"}}><button onClick={()=>{window._dashPayTab="momo";setSelProv(null);setError("")}} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",background:(window._dashPayTab||"momo")==="momo"?"#0B9635":"transparent",color:(window._dashPayTab||"momo")==="momo"?"#fff":"#555"}}>📱 Mobile Money</button><button onClick={()=>{window._dashPayTab="crypto";setSelProv(null);setError("")}} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",background:window._dashPayTab==="crypto"?"linear-gradient(135deg,#F7931A,#26A17B)":"transparent",color:window._dashPayTab==="crypto"?"#fff":"#555"}}>₿ Crypto</button></div>)}
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:8}}>SELECT PAYMENT METHOD</div>
-              <div className="pvg">{PROVS.map(pv=>{const s=selProv===pv.id;return(
+              <div className="pvg">{((window._dashPayTab||"momo")==="momo"?MOMO_PROVS:CRYPTO_PROVS).map(pv=>{const s=selProv===pv.id;return(
                 <div key={pv.id} className={`pv ${s?"on":""}`} onClick={()=>setSelProv(pv.id)} style={{borderColor:s?pv.color:"#1E2028",background:s?pv.color+"08":"#0B0D10"}}>
-                  <div className="pv-d" style={{background:pv.color}} /><div><div className="pv-n" style={{color:s?pv.color:"#F0F0F2"}}>{pv.name}</div><div className="pv-nu">Number: {pv.num} • {pv.acct||"VirtualBet GH"}</div></div>{s&&<div className="pv-c" style={{color:pv.color}}>✓</div>}
+                  <div className="pv-d" style={{background:pv.color}} /><div><div className="pv-n" style={{color:s?pv.color:"#F0F0F2"}}>{pv.name}</div><div className="pv-nu">{pv.type==="crypto"?`${pv.network}`:`Number: ${pv.num} • ${pv.acct||"VirtualBet GH"}`}</div></div>{s&&<div className="pv-c" style={{color:pv.color}}>✓</div>}
                 </div>);})}</div>
-              {selProv&&(()=>{const pv=PROVS.find(x=>x.id===selProv);return(<div style={{background:pv.color+"08",border:`1px solid ${pv.color}20`,borderRadius:10,padding:14,marginBottom:14,animation:"fi .2s"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:pv.color,marginBottom:6}}>SEND TO</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontWeight:700,fontSize:16}}>{pv.num}</span><button onClick={()=>navigator.clipboard?.writeText(pv.num.replace(/-/g,""))} style={{background:pv.color+"15",color:pv.color,border:"none",padding:"4px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Copy</button></div><div style={{fontSize:12,color:"#555"}}>Name: <strong style={{color:"#888"}}>{pv.acct||"VirtualBet GH"}</strong> • Amount: <strong style={{color:"#0B9635"}}>{fG(p.price)}</strong></div></div>);})()}
+              {selProv&&(()=>{const pv=PROVS.find(x=>x.id===selProv);if(!pv) return null;return pv.type==="crypto"?(<div style={{background:pv.color+"08",border:`1px solid ${pv.color}20`,borderRadius:10,padding:14,marginBottom:14,animation:"fi .2s"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:pv.color,marginBottom:6}}>WALLET ADDRESS ({pv.network})</div><div style={{background:"#0B0D1080",borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",gap:8,marginBottom:8}}><span style={{flex:1,fontFamily:"monospace",fontSize:11,color:pv.color,wordBreak:"break-all"}}>{pv.address}</span><button onClick={()=>navigator.clipboard?.writeText(pv.address)} style={{background:pv.color+"15",color:pv.color,border:"none",padding:"4px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",flexShrink:0}}>Copy</button></div><div style={{fontSize:12,color:"#555"}}>Amount: <strong style={{color:"#0B9635"}}>${(p.price*R).toFixed(2)} USD</strong></div><div style={{marginTop:6,fontSize:10,color:"#D4AF37"}}>⚠ Send ONLY via {pv.network}</div></div>):(<div style={{background:pv.color+"08",border:`1px solid ${pv.color}20`,borderRadius:10,padding:14,marginBottom:14,animation:"fi .2s"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:pv.color,marginBottom:6}}>SEND TO</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontWeight:700,fontSize:16}}>{pv.num}</span><button onClick={()=>navigator.clipboard?.writeText(pv.num.replace(/-/g,""))} style={{background:pv.color+"15",color:pv.color,border:"none",padding:"4px 12px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Copy</button></div><div style={{fontSize:12,color:"#555"}}>Name: <strong style={{color:"#888"}}>{pv.acct||"VirtualBet GH"}</strong> • Amount: <strong style={{color:"#0B9635"}}>{fG(p.price)}</strong></div></div>);})()}
               <button className="ab" disabled={!selProv} onClick={()=>setStep(3)} style={{background:selProv?"#0B9635":"#151820",color:selProv?"#fff":"#444"}}>I've Sent Payment →</button>
               <button className="bb" onClick={()=>setStep(1)}>← Back</button>
             </div>);})()}
 
-            {step===3 && !submitted && (()=>{const p=PKGS.find(x=>x.id===selPkg);const pv=PROVS.find(x=>x.id===selProv);return(<div style={{animation:"fi .2s"}}>
-              <div style={{textAlign:"center",marginBottom:16}}><div style={{fontSize:32,marginBottom:4}}>📋</div><div className="mm-ti">Submit Reference</div><p className="mm-su">Enter your <strong style={{color:pv?.color}}>{pv?.name}</strong> transaction details</p></div>
-              <div style={{background:pv?.color+"08",border:`1px solid ${pv?.color}20`,borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><div className="pv-d" style={{background:pv?.color,flexShrink:0}} /><div><div style={{fontWeight:700,fontSize:13,color:pv?.color}}>{pv?.name}</div><div style={{fontSize:11,color:"#555"}}>{subModal.icon} {subModal.name} — {p.icon} {p.name} — {fG(p.price)}</div></div></div>
-              <div style={{marginBottom:14}}><label style={{display:"block",fontSize:10,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:5}}>{pv?.refLabel||"REFERENCE"}</label><input className="inp" placeholder={pv?.refPlaceholder||"e.g. REF-123456"} value={refNum} onChange={e=>setRefNum(e.target.value)} /></div>
-              <div style={{marginBottom:14}}><label style={{display:"block",fontSize:10,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:5}}>SENDER / MERCHANT NAME</label><input className="inp" placeholder="Name on the transaction" value={senderName} onChange={e=>setSenderName(e.target.value)} /></div>
+            {step===3 && !submitted && (()=>{const p=PKGS.find(x=>x.id===selPkg);const pv=PROVS.find(x=>x.id===selProv);const isCrypto=pv?.type==="crypto";return(<div style={{animation:"fi .2s"}}>
+              <div style={{textAlign:"center",marginBottom:16}}><div style={{fontSize:32,marginBottom:4}}>{isCrypto?"🔗":"📋"}</div><div className="mm-ti">{isCrypto?"Submit Transaction":"Submit Reference"}</div><p className="mm-su">Enter your <strong style={{color:pv?.color}}>{pv?.name}</strong> transaction details</p></div>
+              <div style={{background:pv?.color+"08",border:`1px solid ${pv?.color}20`,borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><div className="pv-d" style={{background:pv?.color,flexShrink:0}} /><div><div style={{fontWeight:700,fontSize:13,color:pv?.color}}>{pv?.name}</div><div style={{fontSize:11,color:"#555"}}>{subModal.icon} {subModal.name} — {p.icon} {p.name} — {isCrypto?`$${(p.price*R).toFixed(2)}`:fG(p.price)}</div></div></div>
+              <div style={{marginBottom:14}}><label style={{display:"block",fontSize:10,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:5}}>{pv?.refLabel||"REFERENCE"}</label><input className="inp" placeholder={pv?.refPlaceholder||"e.g. REF-123456"} value={refNum} onChange={e=>setRefNum(e.target.value)} style={{fontFamily:isCrypto?"monospace":"inherit"}} /></div>
+              <div style={{marginBottom:14}}><label style={{display:"block",fontSize:10,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:5}}>{isCrypto?"WALLET / EXCHANGE NAME":"SENDER / MERCHANT NAME"}</label><input className="inp" placeholder={isCrypto?"e.g. Binance, Trust Wallet":"Name on the transaction"} value={senderName} onChange={e=>setSenderName(e.target.value)} /></div>
               <div className="warn">🔒 Admin will verify and activate your {subModal.name} package. Usually 5–30 minutes.</div>
               {error && <div className="err">⚠ {error}</div>}
               <button className="ab" disabled={submitting||!refNum.trim()} onClick={submitRef} style={{background:refNum.trim()?"#0B9635":"#151820",color:refNum.trim()?"#fff":"#444"}}>{submitting?"Submitting...":"Submit Reference"}</button>

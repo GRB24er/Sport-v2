@@ -7,9 +7,15 @@ const R = 0.077;
 const DEF_FEE = 250;
 
 const DEF_PROVS = [
-  { id:"mtn", name:"MTN Mobile Money", short:"MTN MoMo", number:"0547610318", acct:"Abel Afriyie", color:"#FFC300", dark:"#B38F00", bg:"linear-gradient(135deg,#FFC300,#FFD700)", icon:"📱", dial:"*170#", steps:["Dial *170# on your MTN line","Select 1 → Transfer Money","Select 1 → MoMo User","Enter the number shown above","Enter the exact amount","Add reference as note","Confirm name matches","Enter PIN to complete"] },
-  { id:"telecel", name:"Telecel Cash", short:"Telecel", number:"0503994665", acct:"Abel Afriyie", color:"#E40521", dark:"#8B0315", bg:"linear-gradient(135deg,#E40521,#FF1744)", icon:"💳", dial:"*110#", steps:["Dial *110# on your Telecel line","Select Transfer/Send Money","Enter the number shown above","Enter the exact amount","Add reference as note","Confirm and enter PIN"] },
-  { id:"airteltigo", name:"AirtelTigo Money", short:"AirtelTigo", number:"", acct:"", color:"#0056A3", dark:"#003366", bg:"linear-gradient(135deg,#0056A3,#0077CC)", icon:"📲", dial:"*500#", steps:["Dial *500# on your AirtelTigo line","Select Send Money","Enter the number shown above","Enter the exact amount","Confirm and enter PIN"] },
+  { id:"mtn", name:"MTN Mobile Money", short:"MTN MoMo", number:"0547610318", acct:"Abel Afriyie", color:"#FFC300", dark:"#B38F00", bg:"linear-gradient(135deg,#FFC300,#FFD700)", icon:"📱", dial:"*170#", type:"momo", steps:["Dial *170# on your MTN line","Select 1 → Transfer Money","Select 1 → MoMo User","Enter the number shown above","Enter the exact amount","Add reference as note","Confirm name matches","Enter PIN to complete"] },
+  { id:"telecel", name:"Telecel Cash", short:"Telecel", number:"0503994665", acct:"Abel Afriyie", color:"#E40521", dark:"#8B0315", bg:"linear-gradient(135deg,#E40521,#FF1744)", icon:"💳", dial:"*110#", type:"momo", steps:["Dial *110# on your Telecel line","Select Transfer/Send Money","Enter the number shown above","Enter the exact amount","Add reference as note","Confirm and enter PIN"] },
+  { id:"airteltigo", name:"AirtelTigo Money", short:"AirtelTigo", number:"", acct:"", color:"#0056A3", dark:"#003366", bg:"linear-gradient(135deg,#0056A3,#0077CC)", icon:"📲", dial:"*500#", type:"momo", steps:["Dial *500# on your AirtelTigo line","Select Send Money","Enter the number shown above","Enter the exact amount","Confirm and enter PIN"] },
+];
+
+const DEF_CRYPTO = [
+  { id:"usdt_trc20", name:"USDT (TRC20)", short:"USDT TRC20", color:"#26A17B", dark:"#1A7A5C", bg:"linear-gradient(135deg,#26A17B,#50D4A2)", icon:"₮", type:"crypto", network:"Tron (TRC20)", feeNote:"Low fees (~$1)", steps:["Copy the USDT wallet address below","Open your crypto wallet (Binance, Trust Wallet, etc.)","Send the exact USDT amount via TRC20 network","Copy your Transaction Hash (TxID)","Paste it in the reference field below"] },
+  { id:"usdt_erc20", name:"USDT (ERC20)", short:"USDT ERC20", color:"#627EEA", dark:"#3B5998", bg:"linear-gradient(135deg,#627EEA,#8BA3F9)", icon:"₮", type:"crypto", network:"Ethereum (ERC20)", feeNote:"Higher gas fees", steps:["Copy the USDT wallet address below","Open your crypto wallet","Send the exact USDT amount via ERC20 network","Copy your Transaction Hash (TxID)","Paste it in the reference field below"] },
+  { id:"btc", name:"Bitcoin (BTC)", short:"Bitcoin", color:"#F7931A", dark:"#C77A15", bg:"linear-gradient(135deg,#F7931A,#FFB84D)", icon:"₿", type:"crypto", network:"Bitcoin Network", feeNote:"Standard BTC fees", steps:["Copy the Bitcoin address below","Open your BTC wallet or exchange","Send the exact BTC equivalent","Copy your Transaction Hash (TxID)","Paste it in the reference field below"] },
 ];
 
 export default function SignupPage() {
@@ -33,11 +39,30 @@ export default function SignupPage() {
   const s = ss || {};
   const FEE = s.signupFeeGHS || DEF_FEE;
   const FEE_USD = (FEE * R).toFixed(2);
-  const PROVS = [
+
+  // Build MoMo providers — use merchant number if set, else per-network
+  const merchantNum = s.merchantMomoNumber;
+  const merchantName = s.merchantMomoName || "VirtualBet GH";
+  const MOMO_PROVS = merchantNum ? [
+    { ...DEF_PROVS[0], number: merchantNum, acct: merchantName },
+    { ...DEF_PROVS[1], number: merchantNum, acct: merchantName },
+    { ...DEF_PROVS[2], number: merchantNum, acct: merchantName },
+  ].filter(p => p.number) : [
     { ...DEF_PROVS[0], number: s.mtnNumber || DEF_PROVS[0].number, acct: s.mtnName || DEF_PROVS[0].acct },
     { ...DEF_PROVS[1], number: s.telecelNumber || DEF_PROVS[1].number, acct: s.telecelName || DEF_PROVS[1].acct },
     { ...DEF_PROVS[2], number: s.airteltigoNumber || DEF_PROVS[2].number, acct: s.airteltigoName || DEF_PROVS[2].acct },
   ].filter(p => p.number);
+
+  // Build crypto providers from settings
+  const cryptoEnabled = s.cryptoEnabled !== false;
+  const CRYPTO_PROVS = !cryptoEnabled ? [] : [
+    s.usdtTrc20Address ? { ...DEF_CRYPTO[0], address: s.usdtTrc20Address } : null,
+    s.usdtErc20Address ? { ...DEF_CRYPTO[1], address: s.usdtErc20Address } : null,
+    s.btcAddress ? { ...DEF_CRYPTO[2], address: s.btcAddress } : null,
+  ].filter(Boolean);
+
+  const PROVS = [...MOMO_PROVS, ...CRYPTO_PROVS];
+  const [payTab, setPayTab] = useState("momo"); // "momo" or "crypto"
 
   const pv = PROVS.find(p => p.id === provider);
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -207,16 +232,24 @@ export default function SignupPage() {
             {/* ═══ STEP 2 — SELECT PROVIDER ═══ */}
             {step===2&&(<div className="fu">
               <h1 className="su-h">Select Payment Method</h1>
-              <p className="su-sub">Choose your mobile money provider</p>
+              <p className="su-sub">Choose how you'd like to pay</p>
               <div className="su-fee"><span className="su-fee-a">GH₵{FEE}</span><span className="su-fee-u">≈ ${FEE_USD} USD</span></div>
 
+              {/* Payment type tabs */}
+              {CRYPTO_PROVS.length > 0 && (
+                <div style={{display:"flex",gap:4,marginBottom:16,background:"#0B0D10",borderRadius:10,padding:3,border:"1px solid #1E2028"}}>
+                  <button onClick={()=>{setPayTab("momo");setProvider(null)}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",transition:"all .2s",background:payTab==="momo"?"#0B9635":"transparent",color:payTab==="momo"?"#fff":"#555"}}>📱 Mobile Money</button>
+                  <button onClick={()=>{setPayTab("crypto");setProvider(null)}} style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",transition:"all .2s",background:payTab==="crypto"?"linear-gradient(135deg,#F7931A,#26A17B)":"transparent",color:payTab==="crypto"?"#fff":"#555"}}>₿ Crypto (USDT/BTC)</button>
+                </div>
+              )}
+
               <div className="pv-grid">
-                {PROVS.map((p,i)=>(
-                  <div key={p.id} className={`pv-card fu fu${i+1} ${provider===p.id?"on":""}`} onClick={()=>setProvider(p.id)} style={{borderColor:provider===p.id?p.color:"transparent",background:provider===p.id?`rgba(${p.id==="mtn"?"255,195,0":p.id==="telecel"?"228,5,33":"0,86,163"},.06)`:"rgba(11,13,16,.5)"}}>
+                {(payTab==="momo"?MOMO_PROVS:CRYPTO_PROVS).map((p,i)=>(
+                  <div key={p.id} className={`pv-card fu fu${i+1} ${provider===p.id?"on":""}`} onClick={()=>setProvider(p.id)} style={{borderColor:provider===p.id?p.color:"transparent",background:provider===p.id?p.color+"0F":"rgba(11,13,16,.5)"}}>
                     <div className="pv-dot" style={{background:p.bg}}>{p.icon}</div>
                     <div className="pv-info">
                       <div className="pv-name" style={{color:provider===p.id?p.color:"#F0F0F2"}}>{p.name}</div>
-                      <div className="pv-num">{p.number} • {p.acct}</div>
+                      <div className="pv-num">{p.type==="crypto"?`${p.network} • ${p.feeNote}`:`${p.number} • ${p.acct}`}</div>
                     </div>
                     <div className="pv-check" style={{borderColor:provider===p.id?p.color:"#333",background:provider===p.id?p.color:"transparent",color:provider===p.id?"#0B0D10":"transparent"}}>✓</div>
                   </div>
@@ -234,7 +267,7 @@ export default function SignupPage() {
             {/* ═══ STEP 3 — PAY & SUBMIT ═══ */}
             {step===3&&pv&&(<div className="fu">
               <h1 className="su-h">Complete Payment</h1>
-              <p className="su-sub">Send <strong style={{color:"#0B9635"}}>GH₵{FEE}</strong> via <strong style={{color:pv.color}}>{pv.short}</strong></p>
+              <p className="su-sub">Send <strong style={{color:"#0B9635"}}>{pv.type==="crypto"?`$${FEE_USD} USD`:`GH₵${FEE}`}</strong> via <strong style={{color:pv.color}}>{pv.short}</strong></p>
 
               <div className="su-timer">
                 <span className="su-timer-t">⏱ Time remaining</span>
@@ -245,26 +278,50 @@ export default function SignupPage() {
               <div className="pay-box" style={{background:`linear-gradient(135deg,${pv.dark}15,${pv.color}08)`,border:`1px solid ${pv.color}25`}}>
                 <div className="pay-hdr" style={{color:pv.color}}>↓ SEND TO ↓</div>
 
-                <div className="pay-row">
-                  <div><div className="pay-lbl">Mobile Money Number</div></div>
-                  <div className="pay-val" style={{color:pv.color}}>
-                    <span>{pv.number}</span>
-                    <button className={`pay-copy ${copied==="num"?"ok":""}`} onClick={()=>copy(pv.number,"num")}>{copied==="num"?"✓ Copied":"Copy"}</button>
-                  </div>
-                </div>
-
-                <div className="pay-row">
-                  <div><div className="pay-lbl">Account Name</div></div>
-                  <div className="pay-val">{pv.acct}</div>
-                </div>
-
-                <div className="pay-row">
-                  <div><div className="pay-lbl">Amount</div></div>
-                  <div className="pay-val" style={{color:"#0B9635"}}>
-                    <span>GH₵{FEE}.00</span>
-                    <button className={`pay-copy ${copied==="amt"?"ok":""}`} onClick={()=>copy(String(FEE),"amt")}>{copied==="amt"?"✓ Copied":"Copy"}</button>
-                  </div>
-                </div>
+                {pv.type==="crypto"?(
+                  <>
+                    <div className="pay-row" style={{flexDirection:"column",alignItems:"flex-start",gap:8}}>
+                      <div><div className="pay-lbl">{pv.name} Wallet Address</div></div>
+                      <div style={{width:"100%",background:"#0B0D1080",borderRadius:8,padding:"12px 14px",display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{flex:1,fontFamily:"'Space Mono',monospace",fontSize:12,color:pv.color,wordBreak:"break-all",lineHeight:1.5}}>{pv.address}</span>
+                        <button className={`pay-copy ${copied==="addr"?"ok":""}`} onClick={()=>copy(pv.address,"addr")} style={{flexShrink:0}}>{copied==="addr"?"✓ Copied":"Copy"}</button>
+                      </div>
+                    </div>
+                    <div className="pay-row">
+                      <div><div className="pay-lbl">Network</div></div>
+                      <div className="pay-val" style={{color:pv.color}}>{pv.network}</div>
+                    </div>
+                    <div className="pay-row">
+                      <div><div className="pay-lbl">Amount (USD equivalent)</div></div>
+                      <div className="pay-val" style={{color:"#0B9635"}}>
+                        <span>${FEE_USD}</span>
+                        <button className={`pay-copy ${copied==="amt"?"ok":""}`} onClick={()=>copy(FEE_USD,"amt")}>{copied==="amt"?"✓ Copied":"Copy"}</button>
+                      </div>
+                    </div>
+                    <div style={{marginTop:12,padding:"10px 14px",background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:8,fontSize:11,color:"#D4AF37",lineHeight:1.6}}>⚠ Send ONLY via <strong>{pv.network}</strong>. Sending on wrong network = lost funds.</div>
+                  </>
+                ):(
+                  <>
+                    <div className="pay-row">
+                      <div><div className="pay-lbl">Mobile Money Number</div></div>
+                      <div className="pay-val" style={{color:pv.color}}>
+                        <span>{pv.number}</span>
+                        <button className={`pay-copy ${copied==="num"?"ok":""}`} onClick={()=>copy(pv.number,"num")}>{copied==="num"?"✓ Copied":"Copy"}</button>
+                      </div>
+                    </div>
+                    <div className="pay-row">
+                      <div><div className="pay-lbl">Account Name</div></div>
+                      <div className="pay-val">{pv.acct}</div>
+                    </div>
+                    <div className="pay-row">
+                      <div><div className="pay-lbl">Amount</div></div>
+                      <div className="pay-val" style={{color:"#0B9635"}}>
+                        <span>GH₵{FEE}.00</span>
+                        <button className={`pay-copy ${copied==="amt"?"ok":""}`} onClick={()=>copy(String(FEE),"amt")}>{copied==="amt"?"✓ Copied":"Copy"}</button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Steps */}
@@ -277,12 +334,12 @@ export default function SignupPage() {
                 ))}
               </div>
 
-              <div className="su-warn">🔒 <strong style={{color:"#D4AF37"}}>Important:</strong> After sending, you'll receive a transaction code via SMS. Enter it below. Admin verifies within 5–30 minutes.</div>
+              <div className="su-warn">🔒 <strong style={{color:"#D4AF37"}}>Important:</strong> {pv.type==="crypto"?"After sending, copy your Transaction Hash (TxID) from your wallet app and paste it below.":"After sending, you'll receive a transaction code via SMS. Enter it below."} Admin verifies within 5–30 minutes.</div>
 
               {/* Reference form */}
               <form onSubmit={submit}>
-                <div className="su-field"><label className="su-lbl">{pv.id==="mtn"?"Transaction Code":pv.id==="telecel"?"Transaction ID":"Reference Number"}</label><input className="su-inp" placeholder={pv.id==="mtn"?"e.g. 8374652910":pv.id==="telecel"?"e.g. 000012345678":"e.g. REF-123456"} value={refNum} onChange={e=>setRefNum(e.target.value)} style={{borderColor:pv.color+"30",fontFamily:"'Space Mono',monospace"}} /></div>
-                <div className="su-field"><label className="su-lbl">Sender Name (as on MoMo)</label><input className="su-inp" placeholder="e.g. Abel Afriyie" value={senderName} onChange={e=>setSenderName(e.target.value)} /></div>
+                <div className="su-field"><label className="su-lbl">{pv.type==="crypto"?"Transaction Hash (TxID)":pv.id==="mtn"?"Transaction Code":pv.id==="telecel"?"Transaction ID":"Reference Number"}</label><input className="su-inp" placeholder={pv.type==="crypto"?"e.g. 0x7a8b9c...":pv.id==="mtn"?"e.g. 8374652910":pv.id==="telecel"?"e.g. 000012345678":"e.g. REF-123456"} value={refNum} onChange={e=>setRefNum(e.target.value)} style={{borderColor:pv.color+"30",fontFamily:"'Space Mono',monospace"}} /></div>
+                <div className="su-field"><label className="su-lbl">{pv.type==="crypto"?"Wallet / Exchange Name":"Sender Name (as on MoMo)"}</label><input className="su-inp" placeholder={pv.type==="crypto"?"e.g. Binance, Trust Wallet":"e.g. Abel Afriyie"} value={senderName} onChange={e=>setSenderName(e.target.value)} /></div>
                 {err&&<div className="su-err">⚠ {err}</div>}
                 <div className="su-row">
                   <button type="button" className="su-btn su-btn-o" onClick={()=>{setErr("");setStep(2)}}>Back</button>

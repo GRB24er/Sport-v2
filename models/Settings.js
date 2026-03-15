@@ -9,9 +9,20 @@ const settingsSchema = new mongoose.Schema({
   goldPrice: { type: Number, default: 250 }, goldMaxPreds: { type: Number, default: 1 }, goldOdds: { type: String, default: "3-5 Odds" },
   platinumPrice: { type: Number, default: 500 }, platinumMaxPreds: { type: Number, default: 2 }, platinumOdds: { type: String, default: "5-15 Odds" },
   diamondPrice: { type: Number, default: 1000 }, diamondMaxPreds: { type: Number, default: 4 }, diamondOdds: { type: String, default: "15-50 Odds" },
+  // Mobile Money — Merchant
+  merchantMomoNumber: { type: String, default: "" },
+  merchantMomoName: { type: String, default: "" },
+  merchantMomoNetwork: { type: String, default: "all" }, // "mtn", "telecel", "airteltigo", "all"
+  // Legacy per-network (fallback)
   mtnNumber: { type: String, default: "" }, mtnName: { type: String, default: "" },
   telecelNumber: { type: String, default: "" }, telecelName: { type: String, default: "" },
   airteltigoNumber: { type: String, default: "" }, airteltigoName: { type: String, default: "" },
+  // Crypto Wallets
+  usdtTrc20Address: { type: String, default: "" },
+  usdtErc20Address: { type: String, default: "" },
+  btcAddress: { type: String, default: "" },
+  cryptoEnabled: { type: Boolean, default: true },
+  // Contact
   whatsappNumber: { type: String, default: "" },
 }, { timestamps: true });
 

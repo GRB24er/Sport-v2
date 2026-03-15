@@ -124,6 +124,7 @@ export default function App() {
           .vb-section-title{font-size:32px!important;margin-bottom:28px!important}
           .vb-steps{grid-template-columns:1fr 1fr!important;gap:12px!important}
           .vb-step{padding:22px 16px!important}
+          .vb-pay-grid{grid-template-columns:1fr!important}
           .vb-wins{grid-template-columns:1fr!important;gap:10px!important}
           .vb-win{padding:14px 16px!important}
           .vb-win-teams{font-size:11px!important}
@@ -205,6 +206,13 @@ export default function App() {
               <div className="vb-hero-btns">
                 <a href="/signup"><button className="btn-p">Get Started — GH₵250</button></a>
                 <a href="#ai-engine"><button className="btn-gold">See AI in Action ↓</button></a>
+              </div>
+
+              {/* Payment badges */}
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:24}}>
+                {[{icon:"📱",label:"MoMo"},{icon:"₮",label:"USDT"},{icon:"₿",label:"BTC"}].map(b=>(
+                  <span key={b.label} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:600,padding:"4px 10px",borderRadius:6,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",color:"#666"}}>{b.icon} {b.label}</span>
+                ))}
               </div>
 
               <div className="vb-hero-stats">
@@ -334,7 +342,7 @@ export default function App() {
                 {name:"Platinum",price:"1,000",icon:"🥈",color:"#A0B2C6",features:["15 AI Predictions/day","5-15 Odds Tips","VIP Support","Weekly Accumulators"],popular:true},
                 {name:"Diamond",price:"2,000",icon:"💎",color:"#B9F2FF",features:["Unlimited AI Predictions","15-50 Odds Tips","24/7 Premium Support","Daily Accumulators"]},
               ].map(p=>(
-                <div key={p.name} style={{background:"#12141A",border:`1px solid ${p.popular?"#D4AF3740":"#1E2028"}`,borderRadius:16,padding:24,textAlign:"center",position:"relative"}}>
+                <div key={p.name} style={{background:"#12141A",border:`1px solid ${p.popular?"#D4AF3740":"#1E2028"}`,borderRadius:16,padding:24,textAlign:"center",position:"relative",transition:"all 0.3s",cursor:"pointer"}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 12px 40px ${p.color}15`}} onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none"}}>
                   {p.popular&&<div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"linear-gradient(135deg,#D4AF37,#F0D060)",color:"#0B0D10",padding:"3px 14px",borderRadius:20,fontSize:10,fontWeight:800,letterSpacing:1}}>POPULAR</div>}
                   <div style={{fontSize:36,marginBottom:8}}>{p.icon}</div>
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:p.color}}>{p.name}</div>
@@ -347,6 +355,43 @@ export default function App() {
                   ))}
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* PAYMENT METHODS */}
+        <section className="vb-section" style={{background:"linear-gradient(180deg,#0B0D10,#0E1015,#0B0D10)"}}>
+          <div className="vb-section-inner">
+            <p className="vb-section-label" style={{ color:"#0B9635" }}>PAYMENT OPTIONS</p>
+            <h2 className="vb-section-title">Pay Your Way</h2>
+            <p style={{textAlign:"center",color:"#555",fontSize:14,marginBottom:32,maxWidth:420,marginLeft:"auto",marginRight:"auto"}}>
+              We accept Mobile Money and Cryptocurrency for seamless payments worldwide.
+            </p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,maxWidth:700,margin:"0 auto"}}>
+              {/* Mobile Money */}
+              <div style={{background:"linear-gradient(135deg,#12141A,#15171F)",border:"1px solid #1E2028",borderRadius:20,padding:28,position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",top:-30,right:-30,width:100,height:100,background:"radial-gradient(circle,#FFC30010,transparent)",borderRadius:"50%"}} />
+                <div style={{fontSize:32,marginBottom:12}}>📱</div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,marginBottom:8}}>Mobile Money</div>
+                <div style={{fontSize:12,color:"#666",lineHeight:1.6,marginBottom:16}}>Pay instantly via your mobile money wallet. All major networks supported.</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {[{name:"MTN",color:"#FFC300"},{name:"Telecel",color:"#E40521"},{name:"AirtelTigo",color:"#0056A3"}].map(n=>(
+                    <span key={n.name} style={{fontSize:10,fontWeight:700,padding:"4px 12px",borderRadius:6,background:n.color+"15",color:n.color,letterSpacing:0.5}}>{n.name}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Crypto */}
+              <div style={{background:"linear-gradient(135deg,#12141A,#15171F)",border:"1px solid #F7931A20",borderRadius:20,padding:28,position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",top:-30,right:-30,width:100,height:100,background:"radial-gradient(circle,#F7931A10,transparent)",borderRadius:"50%"}} />
+                <div style={{fontSize:32,marginBottom:12}}>₿</div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,marginBottom:8}}>Cryptocurrency</div>
+                <div style={{fontSize:12,color:"#666",lineHeight:1.6,marginBottom:16}}>Pay with USDT or Bitcoin. Fast, secure, and borderless.</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {[{name:"USDT (TRC20)",color:"#26A17B"},{name:"USDT (ERC20)",color:"#627EEA"},{name:"Bitcoin",color:"#F7931A"}].map(n=>(
+                    <span key={n.name} style={{fontSize:10,fontWeight:700,padding:"4px 12px",borderRadius:6,background:n.color+"15",color:n.color,letterSpacing:0.5}}>{n.name}</span>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
