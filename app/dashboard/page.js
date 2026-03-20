@@ -194,26 +194,36 @@ export default function Dashboard() {
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2000); };
   const copyText = (text, label) => { navigator.clipboard?.writeText(text); showToast(`${label || "Copied"} to clipboard`); };
 
+  const compressImg = (file, maxW = 1400, q = 0.7) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+      if (h > maxW) { w = Math.round((w * maxW) / h); h = maxW; }
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL("image/jpeg", q));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
   const handleSubProofUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Please select an image file"); return; }
-    if (file.size > 5 * 1024 * 1024) { setError("Image too large. Maximum 5MB."); return; }
+    if (file.size > 20 * 1024 * 1024) { setError("Image too large. Maximum 20MB."); return; }
     setError("");
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const base64 = ev.target.result;
+    setSubUploading(true);
+    try {
+      const base64 = await compressImg(file);
       setSubProofPreview(base64);
-      setSubUploading(true);
-      try {
-        const res = await fetch("/api/upload-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: base64 }) });
-        const data = await res.json();
-        if (!res.ok) { setError(data.error || "Upload failed"); setSubUploading(false); return; }
-        setSubProofUrl(data.url);
-      } catch (e) { setError("Upload failed. Try again."); }
-      setSubUploading(false);
-    };
-    reader.readAsDataURL(file);
+      const res = await fetch("/api/upload-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: base64 }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Upload failed"); setSubUploading(false); return; }
+      setSubProofUrl(data.url);
+    } catch (e) { setError("Upload failed. Try again."); }
+    setSubUploading(false);
   };
 
   const submitRef = async () => {

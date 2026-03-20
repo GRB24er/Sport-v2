@@ -5,5 +5,15 @@ const nextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
+  api: {
+    bodyParser: {
+      sizeLimit: "20mb",
+    },
+  },
 };
 module.exports = nextConfig;

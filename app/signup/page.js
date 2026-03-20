@@ -85,29 +85,39 @@ export default function SignupPage() {
     setStep(2);
   };
 
+  const compressImg = (file, maxW = 1400, q = 0.7) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+      if (h > maxW) { w = Math.round((w * maxW) / h); h = maxW; }
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL("image/jpeg", q));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
   const handleProofUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) return setErr("Please select an image file");
-    if (file.size > 5 * 1024 * 1024) return setErr("Image too large. Maximum 5MB.");
+    if (file.size > 20 * 1024 * 1024) return setErr("Image too large. Maximum 20MB.");
     setErr("");
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const base64 = ev.target.result;
+    setUploading(true);
+    try {
+      const base64 = await compressImg(file);
       setProofPreview(base64);
-      setUploading(true);
-      try {
-        const res = await fetch("/api/upload-image", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64 }),
-        });
-        const data = await res.json();
-        if (!res.ok) { setErr(data.error || "Upload failed"); setUploading(false); return; }
-        setProofUrl(data.url);
-      } catch (e) { setErr("Upload failed. Try again."); }
-      setUploading(false);
-    };
-    reader.readAsDataURL(file);
+      const res = await fetch("/api/upload-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64 }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error || "Upload failed"); setUploading(false); return; }
+      setProofUrl(data.url);
+    } catch (e) { setErr("Upload failed. Try again."); }
+    setUploading(false);
   };
 
   const submit = async (e) => {

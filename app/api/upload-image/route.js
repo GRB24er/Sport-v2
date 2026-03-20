@@ -8,6 +8,9 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Raise Next.js body size limit to 20MB
+export const maxDuration = 30;
+
 export async function POST(req) {
   try {
     const { image } = await req.json();
@@ -16,21 +19,23 @@ export async function POST(req) {
       return NextResponse.json({ error: "Image is required" }, { status: 400 });
     }
 
-    // Validate base64 image format
     if (!image.startsWith("data:image/")) {
       return NextResponse.json({ error: "Invalid image format" }, { status: 400 });
     }
 
-    // Check size (~5MB limit — base64 is ~33% larger than binary)
+    // Allow up to 20MB base64 (~27MB string)
     const sizeInBytes = (image.length * 3) / 4;
-    if (sizeInBytes > 7 * 1024 * 1024) {
-      return NextResponse.json({ error: "Image too large. Maximum 5MB." }, { status: 400 });
+    if (sizeInBytes > 20 * 1024 * 1024) {
+      return NextResponse.json({ error: "Image too large. Maximum 20MB." }, { status: 400 });
     }
 
     const result = await cloudinary.uploader.upload(image, {
       folder: "betgenius/payment-proofs",
       resource_type: "image",
-      transformation: [{ quality: "auto", fetch_format: "auto" }],
+      transformation: [
+        { width: 1600, height: 1600, crop: "limit" },
+        { quality: "auto:good", fetch_format: "auto" },
+      ],
     });
 
     return NextResponse.json({ url: result.secure_url });
