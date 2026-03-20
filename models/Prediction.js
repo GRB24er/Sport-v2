@@ -10,7 +10,7 @@ const pickSchema = new mongoose.Schema({
 const predictionSchema = new mongoose.Schema(
   {
     type: { type: String, enum: ["admin", "ai"], default: "admin" },
-    gameId: { type: String, default: "instant-virtual", index: true },
+    gameId: { type: String, default: "football", index: true },
 
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 

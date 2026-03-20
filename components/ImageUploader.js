@@ -95,18 +95,18 @@ export default function ImageUploader({ onUpload, disabled, canPredict, predLimi
       onClick={() => canPredict && fileRef.current?.click()}
       className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
         canPredict
-          ? "border-brand-red/30 hover:border-brand-red/60 cursor-pointer bg-brand-red/[0.02] hover:bg-brand-red/[0.05]"
+          ? "border-brand-green/30 hover:border-brand-green/60 cursor-pointer bg-brand-green/[0.02] hover:bg-brand-green/[0.05]"
           : "border-steel/20 cursor-not-allowed"
       }`}
     >
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
       <div className="text-5xl mb-3">{canPredict ? "📸" : "🔒"}</div>
       <div className={`text-lg font-bold font-display mb-1.5 ${canPredict ? "text-smoke" : "text-steel"}`}>
-        {canPredict ? "Upload SportyBet Screenshot" : "Prediction Limit Reached"}
+        {canPredict ? "Upload Betting Screenshot" : "Prediction Limit Reached"}
       </div>
       <p className="text-steel text-sm">
         {canPredict
-          ? "Take a screenshot from SportyBet Instant Football and upload it here"
+          ? "Take a screenshot from your betting app and upload it here"
           : `Upgrade your package for more predictions. Limit: ${predLimit}`}
       </p>
     </div>

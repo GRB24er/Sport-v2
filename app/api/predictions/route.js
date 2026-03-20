@@ -6,15 +6,8 @@ import Prediction from "@/models/Prediction";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 
-const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
-const PKG_LIMITS = { gold: 1, platinum: 2, diamond: 4 };
-
-function mToObj(m) {
-  if (!m) return {};
-  if (m instanceof Map) return Object.fromEntries(m);
-  if (typeof m.toJSON === "function") return m.toJSON();
-  return typeof m === "object" ? { ...m } : {};
-}
+import { mToObj } from "@/lib/utils";
+import { GAME_NAMES, PKG_LIMITS_DEF as PKG_LIMITS } from "@/lib/constants";
 
 // POST — admin creates a prediction for a game
 export async function POST(req) {

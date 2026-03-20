@@ -11,10 +11,10 @@ import Settings from "@/models/Settings";
 import Broadcast from "@/models/Broadcast";
 import { SupportThread } from "@/models/Support";
 
-const PKG_PRICES_DEF = { gold: 250, platinum: 500, diamond: 1000 };
+const PKG_PRICES_DEF = { gold: 40, platinum: 80, diamond: 160 };
 const PKG_NAMES = { gold: "Gold", platinum: "Platinum", diamond: "Diamond" };
-const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
-const PROV_NAMES = { mtn: "MTN MoMo", telecel: "Telecel Cash", airteltigo: "AirtelTigo" };
+const GAME_NAMES = { "football": "Football Predictions", "virtual-football": "Football Predictions", "egames": "Football Predictions", "instant-virtual": "Football Predictions" };
+const PROV_NAMES = { usdt_trc20: "USDT (TRC20)", usdt_erc20: "USDT (ERC20)", btc: "Bitcoin (BTC)", momo: "Mobile Money", card_stripe: "Card (Stripe)", card_paystack: "Card (Paystack)" };
 
 function mToObj(m) {
   if (!m) return {};
@@ -63,7 +63,7 @@ export async function GET() {
     ] = await Promise.all([
       // 1. Users — only fields the dashboard needs (skip password, avatar, etc.)
       User.find({})
-        .select("name phone email status amountPaidGHS referredBy referralCode gamePackages pendingGamePackages sportyBetId referenceNumber paymentProvider createdAt approvedAt")
+        .select("name phone email status amountPaid referredBy referralCode gamePackages pendingGamePackages bettingId referenceNumber paymentProvider createdAt approvedAt")
         .sort({ createdAt: -1 }).limit(200).lean(),
       // 2. Uploads — EXCLUDE imageData (base64 screenshots are 500KB-2MB each!)
       Upload.find({})
@@ -91,7 +91,7 @@ export async function GET() {
       SupportThread.find().sort({ lastDate: -1 }).lean(),
       // 10. Package requests — users with pending packages
       User.find({ "pendingGamePackages": { $exists: true, $ne: {} } })
-        .select("name phone email sportyBetId pendingGamePackages").lean(),
+        .select("name phone email bettingId pendingGamePackages").lean(),
     ]);
 
     // --- Process referral stats ---
@@ -129,7 +129,7 @@ export async function GET() {
 
     // --- Process package requests ---
     const pkgPrices = settings
-      ? { gold: settings.goldPrice || 250, platinum: settings.platinumPrice || 500, diamond: settings.diamondPrice || 1000 }
+      ? { gold: settings.goldPrice || 40, platinum: settings.platinumPrice || 80, diamond: settings.diamondPrice || 160 }
       : PKG_PRICES_DEF;
 
     const requests = [];
@@ -139,7 +139,7 @@ export async function GET() {
         if (r && r.package) {
           requests.push({
             userId: u._id.toString(), userName: u.name, userPhone: u.phone,
-            userEmail: u.email, sportyBetId: u.sportyBetId,
+            userEmail: u.email, bettingId: u.bettingId,
             gameId, gameName: GAME_NAMES[gameId] || gameId,
             packageId: r.package, packageName: PKG_NAMES[r.package] || r.package,
             packagePrice: pkgPrices[r.package] || 0,
@@ -187,5 +187,31 @@ export async function GET() {
   } catch (error) {
     console.error("Admin dashboard error:", error);
     return NextResponse.json({ error: "Failed to load dashboard" }, { status: 500 });
+  }
+}
+
+// POST — admin actions (reset revenue, etc.)
+export async function POST(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await connectDB();
+    const { action } = await req.json();
+
+    if (action === "reset_revenue") {
+      await User.updateMany({}, { $set: { amountPaid: 0 } });
+      // Invalidate cache
+      dashCache = null;
+      dashCacheTime = 0;
+      return NextResponse.json({ message: "Revenue reset to zero for all users" });
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    console.error("Admin dashboard POST error:", error);
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

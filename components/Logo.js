@@ -59,7 +59,7 @@ export default function Logo({ height = 60, style = {} }) {
         strokeLinecap="round"
       />
 
-      {/* VIRTUAL text */}
+      {/* BET text */}
       <text
         x="62"
         y="28"
@@ -69,10 +69,10 @@ export default function Logo({ height = 60, style = {} }) {
         letterSpacing="3"
         fill="url(#textGrad)"
       >
-        VIRTUAL
+        BET
       </text>
 
-      {/* BET text in gold */}
+      {/* GENIUS text in gold */}
       <text
         x="62"
         y="48"
@@ -82,16 +82,16 @@ export default function Logo({ height = 60, style = {} }) {
         letterSpacing="3"
         fill="url(#goldGrad)"
       >
-        BET
+        GENIUS
       </text>
 
       {/* Accent line */}
-      <rect x="108" y="36" width="60" height="2" rx="1" fill="url(#shieldGrad)" opacity="0.6" />
+      <rect x="130" y="36" width="40" height="2" rx="1" fill="url(#shieldGrad)" opacity="0.6" />
 
-      {/* PRO badge */}
-      <rect x="108" y="40" width="28" height="12" rx="3" fill="url(#goldGrad)" />
+      {/* AI badge */}
+      <rect x="130" y="40" width="22" height="12" rx="3" fill="url(#goldGrad)" />
       <text
-        x="122"
+        x="141"
         y="49.5"
         fontFamily="'DM Sans', sans-serif"
         fontSize="7"
@@ -100,7 +100,7 @@ export default function Logo({ height = 60, style = {} }) {
         textAnchor="middle"
         letterSpacing="1.5"
       >
-        PRO
+        AI
       </text>
     </svg>
   );

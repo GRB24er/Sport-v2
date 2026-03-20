@@ -8,22 +8,14 @@ import User from "@/models/User";
 import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
 import { isPackageExpired } from "@/lib/packageUtils";
-
-const PKG_LIMITS_DEF = { gold: 1, platinum: 2, diamond: 4 };
-const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
-
-function mToObj(m) {
-  if (!m) return {};
-  if (m instanceof Map) return Object.fromEntries(m);
-  if (typeof m.toJSON === "function") return m.toJSON();
-  return typeof m === "object" ? { ...m } : {};
-}
+import { mToObj } from "@/lib/utils";
+import { GAME_NAMES, PKG_LIMITS_DEF } from "@/lib/constants";
 
 async function getPkgLimits() {
   try {
     const s = await Settings.findOne({ key: "main" }).lean();
     if (!s) return PKG_LIMITS_DEF;
-    return { gold: s.goldMaxPreds || 1, platinum: s.platinumMaxPreds || 2, diamond: s.diamondMaxPreds || 4 };
+    return { gold: s.goldMaxPreds || 3, platinum: s.platinumMaxPreds || 3, diamond: s.diamondMaxPreds || 3 };
   } catch (e) { return PKG_LIMITS_DEF; }
 }
 
@@ -164,7 +156,7 @@ export async function PATCH(req) {
     if (!session || session.user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDB();
-    const { uploadId, matches, adminNote, action, sportyBetLink } = await req.json();
+    const { uploadId, matches, adminNote, action, betLink } = await req.json();
 
     if (!uploadId) return NextResponse.json({ error: "uploadId required" }, { status: 400 });
 
@@ -195,7 +187,7 @@ export async function PATCH(req) {
 
     const upload = await Upload.findByIdAndUpdate(uploadId, {
       status: "responded", matches: cleanMatches, totalOdd,
-      adminNote: adminNote || "", sportyBetLink: sportyBetLink || "", respondedAt: new Date(),
+      adminNote: adminNote || "", betLink: betLink || "", respondedAt: new Date(),
     }, { new: true });
 
     if (!upload) return NextResponse.json({ error: "Not found" }, { status: 404 });

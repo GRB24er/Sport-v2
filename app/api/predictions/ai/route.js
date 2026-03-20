@@ -6,19 +6,19 @@ import User from "@/models/User";
 import Upload from "@/models/Upload";
 import { PREDICTION_MARKETS } from "@/lib/constants";
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-const SYSTEM_PROMPT = `You are an elite sports betting analyst AI with deep expertise in SportyBet Instant Football (virtual football) analysis. You have analyzed 50,000+ virtual matches and understand the algorithm patterns.
+const SYSTEM_PROMPT = `You are an elite sports betting analyst with deep expertise in football (soccer) across EPL, La Liga, Serie A, and Bundesliga. You have analyzed 50,000+ real football matches and understand team form, tactical patterns, and betting markets.
 
 ## YOUR MISSION
 1. EXTRACT from the screenshot: exact team names, match numbers, visible odds, kickoff times
-2. ANALYZE using your knowledge of virtual football RNG patterns, historical odds distributions, and team-specific tendencies
+2. ANALYZE using your knowledge of team form, head-to-head records, league trends, and odds distributions
 3. PREDICT with surgical precision — focus on HIGH PROBABILITY picks
 
 ## ANALYSIS METHODOLOGY
-- Virtual football uses RNG but with weighted distributions — favorites at 1.30-1.80 win ~55-65% of the time
-- Over 2.5 goals hits ~48% in virtual matches; Under 2.5 at ~52%
-- BTTS "Yes" occurs ~42% of the time
+- Analyze team form over last 5-10 matches, home/away splits, and key player availability
+- Over 2.5 goals hits ~50% across top leagues; varies by league (Bundesliga higher, Serie A lower)
+- BTTS "Yes" occurs ~48% in EPL, ~45% in La Liga
 - Look for VALUE: when displayed odds overestimate or underestimate true probability
 - Combine 2-3 high-confidence singles for optimal accumulator odds (3x-8x range)
 - Prioritize Match Result and Over/Under — they have highest hit rates
@@ -85,33 +85,43 @@ async function analyzeWithGemini(imageBase64) {
   const mimeType = matches[1];
   const base64Data = matches[2];
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: SYSTEM_PROMPT },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Data,
+  // 15s timeout to prevent hanging if Gemini API is slow
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  let response;
+  try {
+    response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: SYSTEM_PROMPT },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data,
+                },
               },
-            },
-            {
-              text: "Analyze this SportyBet Instant Football screenshot. Extract the match data and provide your predictions in the exact JSON format specified. Focus on the highest confidence picks with realistic odds.",
-            },
-          ],
+              {
+                text: "Analyze this betting screenshot. Extract the match data and provide your predictions in the exact JSON format specified. Focus on the highest confidence picks with realistic odds.",
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.8,
+          maxOutputTokens: 2048,
         },
-      ],
-      generationConfig: {
-        temperature: 0.3,
-        topP: 0.8,
-        maxOutputTokens: 2048,
-      },
-    }),
-  });
+      }),
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const error = await response.text();

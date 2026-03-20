@@ -20,14 +20,14 @@ const uploadSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     userName: { type: String, default: "" },
     userPhone: { type: String, default: "" },
-    gameId: { type: String, default: "instant-virtual" },
+    gameId: { type: String, default: "football" },
     imageData: { type: String, required: true },
     status: { type: String, enum: ["pending", "responded", "rejected"], default: "pending", index: true },
     // Admin fills — multiple matches
     matches: [matchSchema],
     totalOdd: { type: Number, default: 0 },
     adminNote: { type: String, default: "" },
-    sportyBetLink: { type: String, default: "" },
+    betLink: { type: String, default: "" },
     respondedAt: { type: Date, default: null },
     // AI fields
     aiPowered: { type: Boolean, default: false },

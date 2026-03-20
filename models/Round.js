@@ -15,16 +15,24 @@ const matchSchema = new mongoose.Schema({
 
 const roundSchema = new mongoose.Schema(
   {
-    gameId: { type: String, enum: ["instant-virtual", "egames"], required: true, index: true },
+    gameId: { type: String, enum: ["football", "instant-virtual", "egames", "virtual-football", "basketball", "tennis"], required: true, index: true },
     status: { type: String, enum: ["draft", "live", "closed", "expired"], default: "draft", index: true },
-    matches: { type: [matchSchema], validate: [v => v.length >= 1 && v.length <= 3, "1-3 matches required"] },
+    matches: { type: [matchSchema], validate: [v => v.length >= 1 && v.length <= 10, "1-10 matches required"] },
     totalOdd: { type: Number, default: 1 },
     adminNote: { type: String, default: "" },
-    sportyBetLink: { type: String, default: "" },
+    betLink: { type: String, default: "" },
+    result: { type: String, enum: ["pending", "won", "lost", "partial"], default: "pending" },
+    resultNote: { type: String, default: "" },
     expiresAt: { type: Date, default: null },
     publishedAt: { type: Date, default: null },
     closedAt: { type: Date, default: null },
     claimedBy: [{ type: String }],
+    isFree: { type: Boolean, default: false },
+    // AI-generated round fields
+    aiGenerated: { type: Boolean, default: false },
+    aiPackageTier: { type: String, enum: ["gold", "platinum", "diamond", null], default: null },
+    aiConfidence: { type: Number, default: null },
+    aiAnalysis: { type: String, default: "" },
   },
   { timestamps: true }
 );

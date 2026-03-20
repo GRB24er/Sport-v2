@@ -18,7 +18,7 @@ export default function Sidebar({ items = [], footer }) {
               href={item.href}
               className={`flex items-center gap-2.5 px-5 py-3 text-sm font-semibold font-display transition-all duration-200 border-l-[3px] ${
                 isActive
-                  ? "bg-brand-red/10 border-brand-red text-smoke"
+                  ? "bg-brand-green/10 border-brand-green text-smoke"
                   : "border-transparent text-steel hover:text-smoke hover:bg-dark-slate/20"
               }`}
             >

@@ -7,14 +7,14 @@ import User from "@/models/User";
 import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
 
-const SIGNUP_FEE_DEF = 50;
+const SIGNUP_FEE_DEF = 20;
 
 // POST — Register
 export async function POST(req) {
   try {
     await connectDB();
     const body = await req.json();
-    const { name, email, phone, password, referenceNumber, paymentProvider, senderName, referralUsed } = body;
+    const { name, email, phone, password, referenceNumber, paymentProvider, senderName, referralUsed, paymentProofUrl } = body;
 
     if (!name || !email || !phone || !password || !referenceNumber) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -27,7 +27,7 @@ export async function POST(req) {
     let SIGNUP_FEE = SIGNUP_FEE_DEF;
     try {
       const s = await Settings.findOne({ key: "main" }).lean();
-      if (s?.signupFeeGHS) SIGNUP_FEE = s.signupFeeGHS;
+      if (s?.signupFee) SIGNUP_FEE = s.signupFee;
     } catch (e) {}
 
     const existing = await User.findOne({ $or: [{ phone }, { email }] });
@@ -42,29 +42,40 @@ export async function POST(req) {
       }
     }
 
-    const sportyBetId = `SB-${phone}`;
+    const bettingId = `BG-${phone || email}`;
+
+    // Auto-generate unique referral code
+    const suffix = (phone || email).slice(-4);
+    let referralCode = null;
+    for (let i = 0; i < 20; i++) {
+      const candidate = `BG-${suffix}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const exists = await User.findOne({ referralCode: candidate }).lean();
+      if (!exists) { referralCode = candidate; break; }
+    }
+
     const user = await User.create({
       name, email, phone, password,
       referenceNumber,
       paymentProvider: paymentProvider || "",
+      paymentProofUrl: paymentProofUrl || "",
       referredBy: referralUsed || null,
-      referralCode: null,
-      sportyBetId,
-      amountPaidGHS: SIGNUP_FEE,
+      referralCode,
+      bettingId,
+      amountPaid: SIGNUP_FEE,
       status: "pending",
     });
 
     await Notification.create({
       type: "payment",
-      message: `${name} (${phone}) submitted registration: ${referenceNumber} — GH₵${SIGNUP_FEE}${senderName ? ` | Sender: ${senderName}` : ""}${referralUsed ? ` | Referred by: ${referralUsed}` : ""}`,
+      message: `${name} (${phone || email}) submitted registration: ${referenceNumber} — $${SIGNUP_FEE}${senderName ? ` | Sender: ${senderName}` : ""}${referralUsed ? ` | Referred by: ${referralUsed}` : ""}`,
       forAdmin: true,
       relatedUserId: user._id,
       metadata: { referenceNumber, phone, paymentProvider, senderName, referralUsed },
     });
 
     return NextResponse.json({
-      message: "Registration submitted. Awaiting admin verification.",
-      user: { id: user._id, name: user.name, phone: user.phone, sportyBetId, status: user.status },
+      message: "Registration submitted. Verification in progress.",
+      user: { id: user._id, name: user.name, phone: user.phone, bettingId, status: user.status },
     }, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);

@@ -8,23 +8,17 @@ import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
 import { getPackageDurations, calculateExpiresAt } from "@/lib/packageUtils";
 
-const PKG_PRICES_DEF = { gold: 250, platinum: 500, diamond: 1000 };
-const PKG_NAMES = { gold: "Gold", platinum: "Platinum", diamond: "Diamond" };
-const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
-const PROV_NAMES = { mtn: "MTN MoMo", telecel: "Telecel Cash", airteltigo: "AirtelTigo", usdt_trc20: "USDT (TRC20)", usdt_erc20: "USDT (ERC20)", btc: "Bitcoin (BTC)", merchant_momo: "Mobile Money (Merchant)" };
+import { mToObj } from "@/lib/utils";
+import { GAME_NAMES, PKG_NAMES } from "@/lib/constants";
 
-function mToObj(m) {
-  if (!m) return {};
-  if (m instanceof Map) return Object.fromEntries(m);
-  if (typeof m.toJSON === "function") return m.toJSON();
-  return typeof m === "object" ? { ...m } : {};
-}
+const PKG_PRICES_DEF = { gold: 40, platinum: 80, diamond: 160 };
+const PROV_NAMES = { usdt_trc20: "USDT (TRC20)", usdt_erc20: "USDT (ERC20)", btc: "Bitcoin (BTC)", momo: "Mobile Money", card_stripe: "Card (Stripe)", card_paystack: "Card (Paystack)" };
 
 async function getPkgPrices() {
   try {
     const s = await Settings.findOne({ key: "main" }).lean();
     if (!s) return PKG_PRICES_DEF;
-    return { gold: s.goldPrice || 250, platinum: s.platinumPrice || 500, diamond: s.diamondPrice || 1000 };
+    return { gold: s.goldPrice || 40, platinum: s.platinumPrice || 80, diamond: s.diamondPrice || 160 };
   } catch (e) { return PKG_PRICES_DEF; }
 }
 
@@ -36,7 +30,7 @@ export async function POST(req) {
 
     await connectDB();
     const PKG_PRICES = await getPkgPrices();
-    const { gameId, packageId, paymentProvider, referenceNumber, senderName } = await req.json();
+    const { gameId, packageId, paymentProvider, referenceNumber, senderName, paymentProofUrl } = await req.json();
 
     if (!gameId || !packageId || !paymentProvider || !referenceNumber) {
       return NextResponse.json({ error: "All fields required" }, { status: 400 });
@@ -55,20 +49,20 @@ export async function POST(req) {
 
     const updateKey = `pendingGamePackages.${gameId}`;
     await User.updateOne({ _id: user._id }, {
-      $set: { [updateKey]: { package: packageId, referenceNumber, paymentProvider, senderName: senderName || "", date: new Date() } }
+      $set: { [updateKey]: { package: packageId, referenceNumber, paymentProvider, senderName: senderName || "", paymentProofUrl: paymentProofUrl || "", date: new Date() } }
     });
 
     const provLabel = PROV_NAMES[paymentProvider] || paymentProvider;
     await Notification.create({
       type: "payment",
-      message: `📦 ${GAME_NAMES[gameId]} — ${user.name} (${user.phone}) wants ${PKG_NAMES[packageId]} (GH₵${PKG_PRICES[packageId]}). ${provLabel}. Ref: ${referenceNumber}${senderName ? `. Sender: ${senderName}` : ""}`,
+      message: `📦 ${GAME_NAMES[gameId]} — ${user.name} (${user.phone}) wants ${PKG_NAMES[packageId]} ($${PKG_PRICES[packageId]}). ${provLabel}. Ref: ${referenceNumber}${senderName ? `. Sender: ${senderName}` : ""}`,
       forAdmin: true, relatedUserId: user._id,
       metadata: { type: "package_purchase", gameId, packageId, paymentProvider, referenceNumber, senderName },
     });
 
     await Notification.create({
       type: "system",
-      message: `Your ${PKG_NAMES[packageId]} for ${GAME_NAMES[gameId]} is submitted. Ref: ${referenceNumber}. Admin will verify shortly.`,
+      message: `Your ${PKG_NAMES[packageId]} for ${GAME_NAMES[gameId]} is submitted. Ref: ${referenceNumber}. Payment verification in progress.`,
       forUserId: user._id,
     });
 
@@ -90,7 +84,7 @@ export async function GET(req) {
     // Only fetch users that actually have pending packages (avoids N+1 on all users)
     const users = await User.find({
       "pendingGamePackages": { $exists: true, $ne: {} }
-    }).select("name phone email sportyBetId pendingGamePackages").lean();
+    }).select("name phone email bettingId pendingGamePackages").lean();
 
     const requests = [];
     for (const u of users) {
@@ -98,7 +92,7 @@ export async function GET(req) {
       for (const [gameId, r] of Object.entries(pending)) {
         if (r && r.package) {
           requests.push({
-            userId: u._id.toString(), userName: u.name, userPhone: u.phone, userEmail: u.email, sportyBetId: u.sportyBetId,
+            userId: u._id.toString(), userName: u.name, userPhone: u.phone, userEmail: u.email, bettingId: u.bettingId,
             gameId, gameName: GAME_NAMES[gameId] || gameId,
             packageId: r.package, packageName: PKG_NAMES[r.package] || r.package, packagePrice: PKG_PRICES[r.package] || 0,
             referenceNumber: r.referenceNumber, paymentProvider: r.paymentProvider,
@@ -148,11 +142,11 @@ export async function PATCH(req) {
       await User.updateOne({ _id: user._id }, {
         $set: { [`gamePackages.${gameId}`]: { package: req2.package, predictionsUsed: 0, activatedAt: new Date(), expiresAt } },
         $unset: { [`pendingGamePackages.${gameId}`]: "" },
-        $inc: { amountPaidGHS: pkgPrice },
+        $inc: { amountPaid: pkgPrice },
       });
 
       await Notification.create({ type: "system", message: `🎉 Your ${pkgName} for ${gameName} is activated! Go play!`, forUserId: user._id });
-      await Notification.create({ type: "system", message: `✅ ${pkgName} for ${gameName} activated for ${user.name}. Revenue: GH₵${pkgPrice}`, forAdmin: true });
+      await Notification.create({ type: "system", message: `✅ ${pkgName} for ${gameName} activated for ${user.name}. Revenue: $${pkgPrice}`, forAdmin: true });
       return NextResponse.json({ message: `${pkgName} for ${gameName} activated` });
     }
 

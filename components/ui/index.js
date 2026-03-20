@@ -10,8 +10,8 @@ export function Logo({ size = "md" }) {
   const box = { sm: "w-7 h-7 text-sm", md: "w-8 h-8 text-base", lg: "w-10 h-10 text-lg" };
   return (
     <div className="flex items-center gap-2.5">
-      <div className={`${box[size]} bg-brand-red rounded-md flex items-center justify-center font-black text-white -rotate-[5deg] font-display`}>V</div>
-      <span className={`${sizes[size]} font-extrabold tracking-[0.15em] font-display text-smoke`}>VIRTUAL<span className="text-brand-red">BET</span></span>
+      <div className={`${box[size]} bg-brand-green rounded-md flex items-center justify-center font-black text-white -rotate-[5deg] font-display`}>B</div>
+      <span className={`${sizes[size]} font-extrabold tracking-[0.15em] font-display text-smoke`}>BET<span className="text-brand-green">GENIUS</span></span>
     </div>
   );
 }
@@ -25,7 +25,7 @@ export function Button({ children, onClick, variant = "primary", disabled, full,
   const width = full ? "w-full" : "";
 
   const variants = {
-    primary: "bg-brand-red text-white hover:bg-red-700",
+    primary: "bg-brand-green text-white hover:bg-green-700",
     green: "bg-brand-green text-white hover:bg-green-700",
     outline: "bg-transparent text-smoke border border-steel hover:border-smoke",
     danger: "bg-brand-crimson text-white hover:bg-red-900",
@@ -183,7 +183,7 @@ export function EmptyState({ icon, title, description, action }) {
 export function Loading({ text = "Loading..." }) {
   return (
     <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-10 h-10 border-[3px] border-dark-slate border-t-brand-red rounded-full animate-spin mb-4" />
+      <div className="w-10 h-10 border-[3px] border-dark-slate border-t-brand-green rounded-full animate-spin mb-4" />
       <span className="text-steel text-sm font-display">{text}</span>
     </div>
   );

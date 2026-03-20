@@ -6,12 +6,7 @@ import User from "@/models/User";
 import Prediction from "@/models/Prediction";
 import Notification from "@/models/Notification";
 
-function mToObj(m) {
-  if (!m) return {};
-  if (m instanceof Map) return Object.fromEntries(m);
-  if (typeof m.toJSON === "function") return m.toJSON();
-  return typeof m === "object" ? { ...m } : {};
-}
+import { mToObj } from "@/lib/utils";
 
 export async function GET(req, { params }) {
   try {
@@ -55,6 +50,15 @@ export async function DELETE(req, { params }) {
   }
 }
 
+// Whitelist of fields admin can modify via PATCH
+const ALLOWED_FIELDS = new Set([
+  "name", "email", "phone", "status", "referralCode", "referralBalance",
+  "referralTotalEarned", "referralCount", "bettingId", "amountPaid",
+  "approvedAt", "approvedBy", "avatar",
+]);
+// Prefix-allowed for nested gamePackages updates (e.g. "gamePackages.epl")
+const ALLOWED_PREFIXES = ["gamePackages.", "pendingGamePackages."];
+
 export async function PATCH(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
@@ -62,7 +66,38 @@ export async function PATCH(req, { params }) {
 
     await connectDB();
     const body = await req.json();
-    const user = await User.findByIdAndUpdate(params.id, { $set: body }, { new: true }).select("-password");
+
+    // Action-based updates (ban, block, suspend, unblock)
+    if (body.action) {
+      const actionMap = { ban: "banned", block: "blocked", suspend: "suspended", unblock: "approved" };
+      const newStatus = actionMap[body.action];
+      if (!newStatus) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+
+      const user = await User.findByIdAndUpdate(params.id, { $set: { status: newStatus } }, { new: true }).select("-password");
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+      await Notification.create({
+        type: "system",
+        message: `User ${user.name} status changed to ${newStatus}`,
+        forAdmin: true, relatedUserId: user._id,
+      });
+
+      return NextResponse.json({ user });
+    }
+
+    // Filter to only allowed fields — prevents role escalation, password overwrite, etc.
+    const sanitized = {};
+    for (const key of Object.keys(body)) {
+      if (ALLOWED_FIELDS.has(key) || ALLOWED_PREFIXES.some(p => key.startsWith(p))) {
+        sanitized[key] = body[key];
+      }
+    }
+
+    if (Object.keys(sanitized).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
+
+    const user = await User.findByIdAndUpdate(params.id, { $set: sanitized }, { new: true }).select("-password");
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     return NextResponse.json({ user });

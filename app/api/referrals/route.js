@@ -9,7 +9,7 @@ import Notification from "@/models/Notification";
 // Generate unique referral code
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "VB-";
+  let code = "BG-";
   for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
   code += "-";
   for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
@@ -52,7 +52,7 @@ export async function POST(req) {
     // Notify user
     await Notification.create({
       type: "referral",
-      message: `You've been assigned a referral code: ${code}. Share it with friends — you earn GH₵10 for every approved signup!`,
+      message: `You've been assigned a referral code: ${code}. Share it with friends — you earn $${2} for every approved signup!`,
       forUserId: user._id,
     });
 
@@ -117,7 +117,7 @@ export async function GET(req) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     let referrals = [];
-    let stats = { total: 0, approved: 0, pending: 0, bonusGHS: 0, bonusUSD: 0 };
+    let stats = { total: 0, approved: 0, pending: 0, totalEarned: 0, currentBalance: 0 };
 
     if (user.referralCode) {
       referrals = await User.find({ referredBy: user.referralCode })
@@ -132,10 +132,8 @@ export async function GET(req) {
         total: referrals.length,
         approved,
         pending,
-        bonusGHS: user.referralTotalEarned || 0,
-        bonusUSD: parseFloat(((user.referralTotalEarned || 0) * 0.077).toFixed(2)),
+        totalEarned: user.referralTotalEarned || 0,
         currentBalance: user.referralBalance || 0,
-        currentBalanceUSD: parseFloat(((user.referralBalance || 0) * 0.077).toFixed(2)),
       };
     }
 

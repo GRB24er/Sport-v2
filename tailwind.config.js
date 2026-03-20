@@ -9,6 +9,8 @@ module.exports = {
       colors: {
         brand: {
           primary: "#0B9635",
+          red: "#E31725",
+          crimson: "#8B0000",
           green: "#0B9635",
           "green-dark": "#076B25",
           gold: "#D4AF37",

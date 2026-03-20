@@ -4,14 +4,12 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const LOGO = 60;
-const R = 0.077;
-const DEF_FEE = 50;
-const fG = v => `GH₵${Number(v).toLocaleString()}`;
-const fB = v => `GH₵${Number(v).toLocaleString()} ($${(Number(v)*R).toFixed(2)})`;
+const DEF_FEE = 20;
+const fG = v => `$${Number(v).toLocaleString()}`;
 const DEF_PKGS = [
-  { id:"gold",name:"Gold",price:250,color:"#D4AF37",icon:"🥇",max:1 },
-  { id:"platinum",name:"Platinum",price:500,color:"#94A7BD",icon:"🥈",max:2 },
-  { id:"diamond",name:"Diamond",price:1000,color:"#7DD3E8",icon:"💎",max:4 },
+  { id:"gold",name:"Gold",price:40,color:"#D4AF37",icon:"🥇",max:3 },
+  { id:"platinum",name:"Platinum",price:80,color:"#94A7BD",icon:"🥈",max:3 },
+  { id:"diamond",name:"Diamond",price:160,color:"#7DD3E8",icon:"💎",max:3 },
 ];
 const NOPKG = { id:"none",name:"None",odds:"—",price:0,color:"#444",icon:"—",max:0,features:[] };
 const tAgo = d => { if(!d) return "—"; const s=Math.floor((Date.now()-new Date(d))/1000); if(s<60) return "just now"; if(s<3600)return Math.floor(s/60)+"m ago"; if(s<86400)return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago"; };
@@ -31,7 +29,7 @@ export default function AdminDash() {
   const [expanded,setExpanded] = useState(null);
   const [modal,setModal] = useState(false);
   const [userModal,setUserModal] = useState(null);
-  const [mf,setMf] = useState({gameId:"instant-virtual",note:"",expire:60,sportyLink:"",matches:[{home:"",away:"",time:"",mkt:"1X2",pick:"",odd:""},{home:"",away:"",time:"",mkt:"Over/Under 2.5",pick:"",odd:""},{home:"",away:"",time:"",mkt:"BTTS",pick:"",odd:""}]});
+  const [mf,setMf] = useState({gameId:"football",note:"",expire:60,bettingLink:"",matches:[{home:"",away:"",time:"",mkt:"1X2",pick:"",odd:""},{home:"",away:"",time:"",mkt:"Over/Under 2.5",pick:"",odd:""},{home:"",away:"",time:"",mkt:"BTTS",pick:"",odd:""}]});
   const [sending,setSending] = useState(false);
   const [refData,setRefData] = useState({ usersWithCodes:[], allReferred:[], stats:{} });
   const [settings,setSettings] = useState(null);
@@ -68,7 +66,17 @@ export default function AdminDash() {
       setUploads(d.uploads||[]);
       setNotifs(d.notifications||[]);
       setRefData(d.referralData||{ usersWithCodes:[], allReferred:[], stats:{} });
-      if(d.settings) { setSettings(d.settings); if(!settingsForm) setSettingsForm(d.settings); }
+      if(d.settings) { setSettings(d.settings); if(!settingsForm) {
+        // Unpack momoProviders array into flat fields for the form
+        const sf = { ...d.settings };
+        const mp = sf.momoProviders || [];
+        for (let i = 0; i < 3; i++) {
+          sf[`momoProvider${i+1}Name`] = mp[i]?.name || "";
+          sf[`momoProvider${i+1}Number`] = mp[i]?.number || "";
+          sf[`momoProvider${i+1}Account`] = mp[i]?.accountName || "";
+        }
+        setSettingsForm(sf);
+      } }
       setBroadcasts(d.broadcasts||[]);
       setSupportThreads(d.support?.threads||[]);
       setSupportUnread(d.support?.totalUnread||0);
@@ -124,7 +132,7 @@ export default function AdminDash() {
 
   // Dynamic prices from settings
   const ss = settings || {};
-  const FEE = ss.signupFeeGHS || DEF_FEE;
+  const FEE = ss.signupFee || DEF_FEE;
   const PKGS = [
     { ...DEF_PKGS[0], price: ss.goldPrice || DEF_PKGS[0].price, max: ss.goldMaxPreds || DEF_PKGS[0].max },
     { ...DEF_PKGS[1], price: ss.platinumPrice || DEF_PKGS[1].price, max: ss.platinumMaxPreds || DEF_PKGS[1].max },
@@ -133,11 +141,11 @@ export default function AdminDash() {
   const getPkg = id => { if(!id) return NOPKG; return PKGS.find(p => p.id === id) || NOPKG; };
   const rejected = users.filter(u=>u.status==="rejected");
   const unread = notifs.filter(n=>!n.read).length;
-  const filtered = filter==="all"?users:users.filter(u=>u.status===filter);
+  const filtered = (filter==="all"?users:users.filter(u=>u.status===filter)).filter(u=>{const q=typeof window!=="undefined"?window._userSearch||"":"";if(!q)return true;return(u.name||"").toLowerCase().includes(q)||(u.phone||"").toLowerCase().includes(q)||(u.email||"").toLowerCase().includes(q)});
 
   // Revenue calculations
   const calcRevenue = (userList) => {
-    return userList.reduce((total, u) => total + (u.amountPaidGHS || 0), 0);
+    return userList.reduce((total, u) => total + (u.amountPaid || 0), 0);
   };
   const totalRevenue = calcRevenue(approved);
   const todayUsers = approved.filter(u => {
@@ -152,12 +160,16 @@ export default function AdminDash() {
     return d >= weekAgo;
   });
 
-  // Package stats
+  // Package stats — count from per-game gamePackages Map
   const pkgStats = PKGS.map(p => {
-    // Count users whose amountPaidGHS includes this package price
-    // Registration = 50, Gold = 250, Platinum = 500, Diamond = 1000
-    const count = approved.filter(u => (u.amountPaidGHS || 0) >= FEE + p.price).length;
-    const revenue = count * (FEE + p.price);
+    let count = 0;
+    approved.forEach(u => {
+      if (u.gamePackages) {
+        const gp = u.gamePackages instanceof Map ? u.gamePackages : new Map(Object.entries(u.gamePackages || {}));
+        gp.forEach(val => { if (val.package === p.id) count++; });
+      }
+    });
+    const revenue = count * p.price;
     return { ...p, count, revenue };
   });
 
@@ -169,7 +181,7 @@ export default function AdminDash() {
   // Referral stats
   const totalReferrals = users.filter(u => u.referredBy).length;
   const approvedReferrals = approved.filter(u => u.referredBy).length;
-  const referralBonus = approvedReferrals * 10;
+  const referralBonus = approvedReferrals * (ss.referralBonus || 2);
 
   // Top referrers
   const referrerMap = {};
@@ -185,14 +197,36 @@ export default function AdminDash() {
   topReferrers.forEach(r => {
     const u = users.find(u => u.referralCode === r.code);
     r.name = u ? u.name : r.code;
-    r.bonus = r.approved * 10;
+    r.bonus = r.approved * (ss.referralBonus || 2);
   });
 
-  // Active users (have used predictions)
-  const activeUsers = approved.filter(u => (u.predictionsUsed||0) > 0);
+  // Active users (have active game packages)
+  const PKG_MAX = { gold: ss.goldMaxPreds || 3, platinum: ss.platinumMaxPreds || 3, diamond: ss.diamondMaxPreds || 3 };
+  const activeUsers = approved.filter(u => {
+    if (!u.gamePackages) return false;
+    const gp = u.gamePackages instanceof Map ? u.gamePackages : new Map(Object.entries(u.gamePackages || {}));
+    let hasActive = false;
+    gp.forEach(val => {
+      const max = PKG_MAX[val.package] || 3;
+      const left = max - (val.predictionsUsed || 0);
+      const notExpired = !val.expiresAt || new Date(val.expiresAt) > new Date();
+      if (left > 0 && notExpired) hasActive = true;
+    });
+    return hasActive;
+  });
   const lockedUsers = approved.filter(u => {
-    const pkg = getPkg(u.package);
-    return (u.predictionsUsed||0) >= pkg.max;
+    if (!u.gamePackages) return false;
+    const gp = u.gamePackages instanceof Map ? u.gamePackages : new Map(Object.entries(u.gamePackages || {}));
+    let allUsed = true;
+    let hasAny = false;
+    gp.forEach(val => {
+      hasAny = true;
+      const max = PKG_MAX[val.package] || 3;
+      const left = max - (val.predictionsUsed || 0);
+      const notExpired = !val.expiresAt || new Date(val.expiresAt) > new Date();
+      if (left > 0 && notExpired) allUsed = false;
+    });
+    return hasAny && allUsed;
   });
 
   const approve = async id => { await fetch("/api/users/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id})}); load(); };
@@ -205,14 +239,15 @@ export default function AdminDash() {
   };
   const markRead = async () => { await fetch("/api/notifications",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({markAll:true})}); load(); };
 
-  const upgradeUser = async (id, newPkg) => {
-    await fetch(`/api/users/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({package:newPkg,predictionsUsed:0})});
+  const upgradeUser = async (id, newPkg, gameId = "football") => {
+    const pkg = { package: newPkg, predictionsUsed: 0, activatedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 30 * 86400000).toISOString() };
+    await fetch(`/api/users/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({[`gamePackages.${gameId}`]: pkg})});
     setUserModal(null); load();
   };
   const approvePkg = async (userId, gameId) => { await fetch("/api/packages",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,gameId,action:"approve"})}); load(); };
-  const rejectPkg = async (userId, gameId) => { await fetch("/api/packages",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,gameId,action:"reject"})}); load(); };
+  const rejectPkg = async (userId, gameId) => { if(!confirm("Reject this package request? The user will need to re-submit.")) return; await fetch("/api/packages",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,gameId,action:"reject"})}); load(); };
 
-  const MKTS = {
+  const FOOTBALL_MKTS = {
     "1X2":["1 (Home)","X (Draw)","2 (Away)"],
     "Over/Under 1.5":["Over 1.5","Under 1.5"],
     "Over/Under 2.5":["Over 2.5","Under 2.5"],
@@ -224,6 +259,21 @@ export default function AdminDash() {
     "HT/FT":["1/1","1/X","1/2","X/1","X/X","X/2","2/1","2/X","2/2"],
     "Total Goals":["0-1","2-3","4-5","6+"],
   };
+  const BASKETBALL_MKTS = {
+    "Moneyline":["Home Win","Away Win"],
+    "Point Spread":["+Spread Home","-Spread Home","+Spread Away","-Spread Away"],
+    "Over/Under Points":["Over","Under"],
+    "Quarter Winner":["Home Q1","Away Q1","Home Q2","Away Q2","Home Q3","Away Q3","Home Q4","Away Q4"],
+    "Total Points Range":["Under 180.5","Over 180.5","Under 200.5","Over 200.5","Under 220.5","Over 220.5"],
+  };
+  const TENNIS_MKTS = {
+    "Match Winner":["Player 1","Player 2"],
+    "Set Winner":["Player 1 Set","Player 2 Set"],
+    "Total Sets":["2 Sets","3 Sets","4 Sets","5 Sets"],
+    "Game Handicap":["+1.5 P1","-1.5 P1","+1.5 P2","-1.5 P2","+2.5 P1","-2.5 P1","+2.5 P2","-2.5 P2"],
+    "Over/Under Games":["Over 20.5","Under 20.5","Over 22.5","Under 22.5"],
+  };
+  const MKTS = mf.gameId === "basketball" ? BASKETBALL_MKTS : mf.gameId === "tennis" ? TENNIS_MKTS : FOOTBALL_MKTS;
   const MKT_KEYS = Object.keys(MKTS);
 
   const updMatch = (idx, field, val) => setMf(f => {
@@ -240,21 +290,39 @@ export default function AdminDash() {
     await fetch("/api/rounds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       gameId: mf.gameId,
       matches: valid.map(m => ({ homeTeam: m.home, awayTeam: m.away, matchTime: m.time, picks: [{ market: m.mkt, pick: m.pick, odd: parseFloat(m.odd) || 1.5 }] })),
-      adminNote: mf.note, sportyBetLink: mf.sportyLink,
+      adminNote: mf.note, bettingLink: mf.bettingLink,
       goLive: true,
       expiresInMinutes: parseInt(mf.expire) || 60,
+      isFree: !!mf.isFree,
     })});
     setSending(false); setModal(false);
-    setMf({gameId:"instant-virtual",note:"",expire:60,sportyLink:"",matches:[{home:"",away:"",time:"",mkt:"1X2",pick:"",odd:""},{home:"",away:"",time:"",mkt:"Over/Under 2.5",pick:"",odd:""},{home:"",away:"",time:"",mkt:"BTTS",pick:"",odd:""}]});
+    setMf({gameId:"football",note:"",expire:60,bettingLink:"",isFree:false,matches:[{home:"",away:"",time:"",mkt:"1X2",pick:"",odd:""},{home:"",away:"",time:"",mkt:"Over/Under 2.5",pick:"",odd:""},{home:"",away:"",time:"",mkt:"BTTS",pick:"",odd:""}]});
     load();
   };
 
   const saveSettings = async () => {
     if(!settingsForm) return;
     setSaving(true);
-    const res = await fetch("/api/admin/settings",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(settingsForm)});
+    // Build momoProviders array from flat fields
+    const sf = { ...settingsForm };
+    const momoProviders = [];
+    for (let i = 1; i <= 3; i++) {
+      const name = sf[`momoProvider${i}Name`];
+      const number = sf[`momoProvider${i}Number`];
+      if (name && number) {
+        momoProviders.push({ id: `momo_${name.toLowerCase().replace(/\s/g,"_")}`, name, number, accountName: sf[`momoProvider${i}Account`] || "", color: "#0B9635", enabled: true });
+      }
+      delete sf[`momoProvider${i}Name`]; delete sf[`momoProvider${i}Number`]; delete sf[`momoProvider${i}Account`];
+    }
+    sf.momoProviders = momoProviders;
+    sf.momoEnabled = momoProviders.length > 0;
+    const res = await fetch("/api/admin/settings",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(sf)});
     const data = await res.json();
-    if(data.settings) { setSettings(data.settings); setSettingsForm(data.settings); }
+    if(data.settings) { setSettings(data.settings);
+      const sf2 = { ...data.settings }; const mp2 = sf2.momoProviders || [];
+      for (let i = 0; i < 3; i++) { sf2[`momoProvider${i+1}Name`] = mp2[i]?.name || ""; sf2[`momoProvider${i+1}Number`] = mp2[i]?.number || ""; sf2[`momoProvider${i+1}Account`] = mp2[i]?.accountName || ""; }
+      setSettingsForm(sf2);
+    }
     setSaving(false);
   };
   const sendBroadcast = async () => {
@@ -279,7 +347,7 @@ export default function AdminDash() {
     {id:"pkg-requests",icon:"📦",label:"Packages",cnt:pkgRequests.length,cc:pkgRequests.length>0?"#D4AF37":null},
     {id:"users",icon:"👥",label:"Users",cnt:users.length},
     {id:"uploads",icon:"📸",label:"Uploads",cnt:uploads.filter(u=>u.status==="pending").length},
-    {id:"rounds",icon:"🎮",label:"eGames Rounds",cnt:preds.filter(r=>r.status==="live").length,cc:preds.filter(r=>r.status==="live").length>0?"#8B5CF6":null},
+    {id:"rounds",icon:"⚽",label:"Prediction Rounds",cnt:preds.filter(r=>r.status==="live").length,cc:preds.filter(r=>r.status==="live").length>0?"#0B9635":null},
     {id:"referrals",icon:"🔗",label:"Referrals",cnt:totalReferrals},
     {id:"notifs",icon:"🔔",label:"Alerts",cnt:unread,cc:unread>0?"#0B9635":null},
     {id:"payments",icon:"💳",label:"Payments"},
@@ -330,7 +398,7 @@ export default function AdminDash() {
       <header className="ahdr" style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 24px",borderBottom:"1px solid #151820",background:"#0B0D10F0",backdropFilter:"blur(20px)",position:"sticky",top:0,zIndex:90}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <button className="aham" style={{display:"none",background:"none",border:"none",color:"#F0F0F2",fontSize:22,cursor:"pointer"}} onClick={()=>setSidebar(!sidebar)}>☰</button>
-          <a href="/"><img src="/images/logo.png" alt="VB" style={{height:LOGO,width:"auto",objectFit:"contain"}} /></a>
+          <a href="/"><img src="/images/logo.png" alt="BG" style={{height:LOGO,width:"auto",objectFit:"contain"}} /></a>
           <span style={{fontSize:10,fontWeight:700,letterSpacing:1.5,padding:"4px 12px",borderRadius:8,background:"#0B963518",color:"#0B9635"}}>ADMIN</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -355,7 +423,6 @@ export default function AdminDash() {
           <div style={{padding:"14px 20px",borderTop:"1px solid #151820",marginBottom:8}}>
             <div style={lbl}>TOTAL REVENUE</div>
             <div style={{...val,fontSize:20,color:"#0B9635"}}>{fG(totalRevenue)}</div>
-            <div style={{fontSize:10,color:"#444"}}>≈ ${(totalRevenue*R).toFixed(0)} USD</div>
           </div>
           <div style={{padding:"0 20px 14px"}}><button onClick={()=>setModal(true)} style={{width:"100%",padding:14,background:"#0B9635",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>+ Create Round</button></div>
         </aside>
@@ -371,7 +438,7 @@ export default function AdminDash() {
             {/* Top stats row */}
             <div className="agrid3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
               {[
-                {l:"TOTAL REVENUE",v:fG(totalRevenue),c:"#0B9635",s:`≈ $${(totalRevenue*R).toFixed(0)} USD`,icon:"💰"},
+                {l:"TOTAL REVENUE",v:fG(totalRevenue),c:"#0B9635",s:`${approved.length} approved`,icon:"💰"},
                 {l:"TOTAL USERS",v:users.length,s:`${approved.length} approved • ${pending.length} pending`,icon:"👥"},
                 {l:"UPLOADS",v:uploads.length,c:"#0B9635",s:`${pendUploads.length} pending • ${doneUploads.length} done`,icon:"📸"},
               ].map((s,i)=>(
@@ -387,9 +454,9 @@ export default function AdminDash() {
             <div className="agrid4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
               {[
                 {l:"TODAY",v:todayUsers.length+" new",icon:"📅",s:todayUploads.length+" uploads"},
-                {l:"THIS WEEK",v:thisWeekUsers.length+" users",icon:"📆",s:fB(calcRevenue(thisWeekUsers))},
+                {l:"THIS WEEK",v:thisWeekUsers.length+" users",icon:"📆",s:fG(calcRevenue(thisWeekUsers))},
                 {l:"ACTIVE",v:activeUsers.length,icon:"⚡",c:"#0B9635",s:lockedUsers.length+" locked"},
-                {l:"REFERRALS",v:totalReferrals,icon:"🔗",s:fB(referralBonus)+" owed"},
+                {l:"REFERRALS",v:totalReferrals,icon:"🔗",s:fG(referralBonus)+" owed"},
               ].map((s,i)=>(
                 <div key={s.l} className={`as d${i+1}`} style={stat}>
                   <div style={lbl}>{s.icon} {s.l}</div>
@@ -399,6 +466,27 @@ export default function AdminDash() {
               ))}
             </div>
 
+            {/* AI Predictor Performance */}
+            {(()=>{const aiRounds=preds.filter(r=>r.aiGenerated);const aiWon=aiRounds.filter(r=>r.result==="won").length;const aiLost=aiRounds.filter(r=>r.result==="lost").length;const aiResolved=aiWon+aiLost;const aiRate=aiResolved>0?Math.round(aiWon/aiResolved*100):0;const aiPending=aiRounds.filter(r=>r.result==="pending").length;return aiRounds.length>0?(
+            <div style={{marginBottom:16}}>
+              <div style={section}>AI PREDICTOR PERFORMANCE</div>
+              <div className="agrid4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+                {[
+                  {l:"AI ROUNDS",v:aiRounds.length,icon:"\u{1F916}",s:`${aiRounds.filter(r=>r.status==="live").length} live`,c:"#8B5CF6"},
+                  {l:"WIN RATE",v:aiRate+"%",icon:"\u{1F3AF}",s:`${aiWon}W / ${aiLost}L`,c:aiRate>=70?"#0B9635":aiRate>=50?"#D4AF37":"#E53E3E"},
+                  {l:"PENDING",v:aiPending,icon:"\u23F3",s:"awaiting results",c:"#D4AF37"},
+                  {l:"AVG CONFIDENCE",v:Math.round(aiRounds.reduce((a,r)=>a+(r.aiConfidence||0),0)/aiRounds.length)+"%",icon:"\u{1F4CA}",s:"AI self-rating",c:"#94A7BD"},
+                ].map((s,i)=>(
+                  <div key={s.l} className={`as d${i+1}`} style={stat}>
+                    <div style={lbl}>{s.icon} {s.l}</div>
+                    <div style={{...val,fontSize:22,color:s.c||"#F0F0F2"}}>{s.v}</div>
+                    <div style={{fontSize:10,color:"#444",marginTop:2}}>{s.s}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            ):null;})()}
+
             {/* Package breakdown */}
             <div style={section}>PACKAGE BREAKDOWN</div>
             <div className="agrid3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
@@ -407,7 +495,7 @@ export default function AdminDash() {
                   <div style={{fontSize:32,marginBottom:4}}>{p.icon}</div>
                   <div style={{...val,fontSize:18,color:p.color,letterSpacing:1}}>{p.name}</div>
                   <div style={{...val,fontSize:32}}>{p.count}</div>
-                  <div style={{fontSize:11,color:"#0B9635",fontWeight:700}}>{fB(p.revenue)}</div>
+                  <div style={{fontSize:11,color:"#0B9635",fontWeight:700}}>{fG(p.revenue)}</div>
                   <div style={{fontSize:10,color:"#444",marginTop:4}}>{fG(p.revenue)} revenue</div>
                 </div>
               ))}
@@ -416,14 +504,15 @@ export default function AdminDash() {
             {/* Pending alerts */}
             {pending.length>0&&(<div>
               <div style={{...section,color:"#0B9635"}}>🔴 PENDING APPROVALS ({pending.length})</div>
-              {pending.map(u=>{const p=getPkg(u.package);return(
+              {pending.map(u=>{const pgp=u.pendingGamePackages?(typeof u.pendingGamePackages==='object'?Object.values(u.pendingGamePackages):[]):[];const firstPkg=pgp[0];const p=firstPkg?getPkg(firstPkg.package):NOPKG;return(
                 <div key={u._id} className="as" style={{...card,borderColor:"#0B963520",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:15}}>{u.name} <span style={{color:"#444",fontWeight:400,fontSize:12}}>({u.phone})</span></div>
                     <div style={{fontSize:12,color:"#444",marginTop:2}}>
-                      Ref: <span style={{color:"#0B9635",fontWeight:700,fontFamily:"monospace"}}>{u.referenceNumber}</span> • {p.icon} {p.name} • Total: {fB(FEE + p.price)}
+                      Ref: <span style={{color:"#0B9635",fontWeight:700,fontFamily:"monospace"}}>{u.referenceNumber}</span> • {p.icon} {p.name} • Total: {fG(FEE + p.price)}
                     </div>
                     <div style={{fontSize:11,color:"#333",marginTop:2}}>Submitted {tAgo(u.createdAt)}{u.referredBy ? ` • Referred by: ${u.referredBy}` : ""}</div>
+                    {u.paymentProofUrl&&<div style={{marginTop:8}}><img src={u.paymentProofUrl} alt="Payment proof" onClick={()=>window.open(u.paymentProofUrl,"_blank")} style={{maxHeight:120,borderRadius:8,border:"1px solid #1E2028",cursor:"pointer",objectFit:"cover"}} /><div style={{fontSize:10,color:"#555",marginTop:2}}>Click to enlarge</div></div>}
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     <button onClick={()=>approve(u._id)} style={btn("#0B9635")}>✓ Approve</button>
@@ -436,9 +525,9 @@ export default function AdminDash() {
             {/* Package requests */}
             {pkgRequests.length>0&&(<div>
               <div style={{...section,color:"#D4AF37"}}>📦 PACKAGE REQUESTS ({pkgRequests.length})</div>
-              {pkgRequests.slice(0,3).map((r,i)=>{const pc={gold:"#D4AF37",platinum:"#94A7BD",diamond:"#7DD3E8"};const pi={gold:"🥇",platinum:"🥈",diamond:"💎"};const gc={["instant-virtual"]:"⚽",egames:"🎮",["sporty-hero"]:"🦸",["spin-bottle"]:"🍾"};return(
+              {pkgRequests.slice(0,3).map((r,i)=>{const pc={gold:"#D4AF37",platinum:"#94A7BD",diamond:"#7DD3E8"};const pi={gold:"🥇",platinum:"🥈",diamond:"💎"};const gc={football:"⚽",["virtual-football"]:"⚽",egames:"⚽",["instant-virtual"]:"⚽",basketball:"🏀",tennis:"🎾"};return(
                 <div key={r.userId+r.gameId} className="as" style={{...card,borderColor:(pc[r.packageId]||"#D4AF37")+"25",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
-                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15}}>{r.userName} <span style={{color:"#444",fontWeight:400,fontSize:12}}>({r.userPhone})</span></div><div style={{fontSize:12,color:"#444",marginTop:2}}>{gc[r.gameId]||"🎮"} <strong>{r.gameName}</strong> → {pi[r.packageId]} <span style={{color:pc[r.packageId],fontWeight:700}}>{r.packageName}</span> — GH₵{r.packagePrice} • {r.providerName} • Ref: <span style={{color:"#0B9635",fontFamily:"monospace",fontWeight:700}}>{r.referenceNumber}</span>{r.senderName?` • From: ${r.senderName}`:""}</div></div>
+                  <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15}}>{r.userName} <span style={{color:"#444",fontWeight:400,fontSize:12}}>({r.userPhone})</span></div><div style={{fontSize:12,color:"#444",marginTop:2}}>{gc[r.gameId]||"🎮"} <strong>{r.gameName}</strong> → {pi[r.packageId]} <span style={{color:pc[r.packageId],fontWeight:700}}>{r.packageName}</span> — ${r.packagePrice} • {r.providerName} • Ref: <span style={{color:"#0B9635",fontFamily:"monospace",fontWeight:700}}>{r.referenceNumber}</span>{r.senderName?` • From: ${r.senderName}`:""}</div>{r.paymentProofUrl&&<div style={{marginTop:6}}><img src={r.paymentProofUrl} alt="Proof" onClick={()=>window.open(r.paymentProofUrl,"_blank")} style={{maxHeight:100,borderRadius:8,border:"1px solid #1E2028",cursor:"pointer",objectFit:"cover"}} /></div>}</div>
                   <div style={{display:"flex",gap:6}}><button onClick={()=>approvePkg(r.userId,r.gameId)} style={btn("#0B9635")}>✓ Activate</button><button onClick={()=>rejectPkg(r.userId,r.gameId)} style={btn("#076B25")}>✗</button></div>
                 </div>
               );})}
@@ -478,11 +567,11 @@ export default function AdminDash() {
           {/* ═══ PENDING ═══ */}
           {tab==="pending"&&(<div className="as">
             <h1 style={{...val,fontSize:28,marginBottom:4}}>Pending Payments ({pending.length})</h1>
-            <p style={{fontSize:14,color:"#555",marginBottom:20}}>Verify payment before approving. Expected: {fB(FEE)} registration fee per user.</p>
+            <p style={{fontSize:14,color:"#555",marginBottom:20}}>Verify payment before approving. Expected: {fG(FEE)} registration fee per user.</p>
 
             {pending.length===0?(
               <div style={{...card,textAlign:"center",padding:48,color:"#444",border:"1px solid #0B963520"}}><div style={{fontSize:48,marginBottom:8}}>✅</div><div style={{fontWeight:700,fontSize:16}}>All caught up!</div><div style={{fontSize:13,marginTop:4}}>No pending payments</div></div>
-            ):pending.map((u,i)=>{const p=getPkg(u.package);return(
+            ):pending.map((u,i)=>{const pgp=u.pendingGamePackages?Object.values(typeof u.pendingGamePackages==="object"?u.pendingGamePackages:{}):[];const gpp=u.gamePackages?Object.values(typeof u.gamePackages==="object"?u.gamePackages:{}):[];const fp=pgp[0]||gpp[0];const p=fp?getPkg(fp.package):NOPKG;return(
               <div key={u._id} className={`as d${Math.min(i+1,5)}`} style={{...card,borderColor:"#0B963520"}}>
                 <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
                   <div style={{flex:1}}>
@@ -493,8 +582,8 @@ export default function AdminDash() {
                         {l:"Email",v:u.email||"—"},
                         {l:"Reference",v:u.referenceNumber,c:"#0B9635",m:true},
                         {l:"Provider",v:u.paymentProvider||"Not specified"},
-                        {l:"Expected",v:fB(FEE),c:"#0B9635"},
-                        {l:"SportyBet",v:u.sportyBetId||"—"},
+                        {l:"Expected",v:fG(FEE),c:"#0B9635"},
+                        {l:"Betting ID",v:u.bettingId||"—"},
                         {l:"Referred By",v:u.referredBy||"None",c:u.referredBy?"#D4AF37":"#333"},
                         {l:"Submitted",v:fDate(u.createdAt)},
                       ].map(r=>(<>
@@ -514,24 +603,26 @@ export default function AdminDash() {
 
           {/* ═══ USERS ═══ */}
           {tab==="users"&&(<div className="as">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:10}}>
               <h1 style={{...val,fontSize:28}}>All Users ({filtered.length})</h1>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["all","approved","pending","rejected"].map(f=>(
-                <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:filter===f?"1px solid #0B9635":"1px solid #1E2028",background:filter===f?"#0B9635":"transparent",color:filter===f?"#fff":"#555",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>{f} ({f==="all"?users.length:users.filter(u=>u.status===f).length})</button>
-              ))}</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["all","approved","pending","rejected","banned","blocked","suspended"].map(f=>{const cnt=f==="all"?users.length:users.filter(u=>u.status===f).length;if(cnt===0&&f!=="all"&&f!=="approved"&&f!=="pending") return null;return(
+                <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:filter===f?"1px solid #0B9635":"1px solid #1E2028",background:filter===f?"#0B9635":"transparent",color:filter===f?"#fff":"#555",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>{f} ({cnt})</button>
+              );})}</div>
             </div>
+            {/* Search bar */}
+            <input placeholder="Search by name, phone, or email..." onChange={e=>{const q=e.target.value.toLowerCase();setFilter(prev=>{window._userSearch=q;return prev})}} style={{width:"100%",padding:"12px 16px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:10,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none",marginBottom:14}} />
             <div className="atable-wrap">
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
                 <thead><tr>{["Name","Phone","Pkg","Preds","Revenue","Ref Code","Status","Joined","Actions"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 8px",color:"#444",fontSize:10,fontWeight:700,letterSpacing:1.5,borderBottom:"1px solid #151820"}}>{h}</th>)}</tr></thead>
-                <tbody>{filtered.map(u=>{const p=getPkg(u.package);const rev=FEE+p.price;return(
+                <tbody>{filtered.map(u=>{const gp=u.gamePackages?(typeof u.gamePackages==='object'?Object.values(u.gamePackages):[]):[];const firstPkg=gp[0];const p=firstPkg?getPkg(firstPkg.package):NOPKG;const rev=u.amountPaid||0;return(
                   <tr key={u._id} style={{borderBottom:"1px solid #15182080",cursor:"pointer"}} onClick={()=>setUserModal(u)}>
                     <td style={{padding:"10px 8px",fontWeight:600}}>{u.name}</td>
                     <td style={{padding:"10px 8px",color:"#555"}}>{u.phone}</td>
                     <td style={{padding:"10px 8px"}}><span style={badge(p.color+"18",p.color)}>{p.icon} {p.name}</span></td>
-                    <td style={{padding:"10px 8px"}}><span style={{color:(u.predictionsUsed||0)>=p.max?"#0B9635":"#0B9635",fontWeight:700}}>{u.predictionsUsed||0}/{p.max}</span></td>
+                    <td style={{padding:"10px 8px"}}><span style={{color:(firstPkg?.predictionsUsed||0)>=p.max?"#E31725":"#0B9635",fontWeight:700}}>{firstPkg?.predictionsUsed||0}/{p.max}</span></td>
                     <td style={{padding:"10px 8px",color:"#0B9635",fontWeight:700}}>{fG(rev)}</td>
                     <td style={{padding:"10px 8px",fontFamily:"monospace",fontSize:11,color:"#555"}}>{u.referralCode||"—"}</td>
-                    <td style={{padding:"10px 8px"}}><span style={badge(u.status==="approved"?"#0B963518":u.status==="pending"?"#D4AF3718":"#0B963518",u.status==="approved"?"#0B9635":u.status==="pending"?"#D4AF37":"#0B9635")}>{u.status}</span></td>
+                    <td style={{padding:"10px 8px"}}><span style={badge(u.status==="approved"?"#0B963518":u.status==="pending"?"#D4AF3718":u.status==="banned"?"#E3172518":u.status==="blocked"?"#E3172518":u.status==="suspended"?"#94A7BD18":"#E3172518",u.status==="approved"?"#0B9635":u.status==="pending"?"#D4AF37":u.status==="banned"?"#E31725":u.status==="blocked"?"#E31725":u.status==="suspended"?"#94A7BD":"#E31725")}>{u.status}</span></td>
                     <td style={{padding:"10px 8px",fontSize:11,color:"#444"}}>{tAgo(u.createdAt)}</td>
                     <td style={{padding:"10px 8px"}}><div style={{display:"flex",gap:4}}>
                       {u.status==="pending"&&<button onClick={e=>{e.stopPropagation();approve(u._id)}} style={btn("#0B9635")}>Approve</button>}
@@ -668,8 +759,12 @@ export default function AdminDash() {
           {/* ═══ eGAMES ROUNDS ═══ */}
           {tab==="rounds"&&(<div className="as">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
-              <div><h1 style={{...val,fontSize:28}}>eGames Rounds ({preds.length})</h1><p style={{fontSize:12,color:"#444"}}>{preds.filter(r=>r.status==="live").length} live • {preds.filter(r=>r.status==="closed"||r.status==="expired").length} ended</p></div>
-              <button onClick={()=>setModal(true)} style={{...btn("#8B5CF6"),padding:"10px 20px",fontSize:13}}>+ Create Round</button>
+              <div><h1 style={{...val,fontSize:28}}>Prediction Rounds ({preds.length})</h1><p style={{fontSize:12,color:"#444"}}>{preds.filter(r=>r.status==="live").length} live \u2022 {preds.filter(r=>r.status==="closed"||r.status==="expired").length} ended \u2022 {preds.filter(r=>r.aiGenerated).length} AI {(()=>{const w=preds.filter(r=>r.aiGenerated&&r.result==="won").length;const l=preds.filter(r=>r.aiGenerated&&r.result==="lost").length;return w+l>0?`(${w}W/${l}L)`:"";})()}</p></div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={async()=>{if(!confirm("Trigger AI to generate predictions for today's matches?"))return;try{const r=await fetch("/api/cron/predict",{method:"POST"});const d=await r.json();alert(d.message||JSON.stringify(d));load();}catch(e){alert("Failed: "+e.message);}}} style={{...btn("#8B5CF6"),padding:"10px 20px",fontSize:13}}>{"\u{1F916}"} AI Predict</button>
+                <button onClick={async()=>{try{const r=await fetch("/api/cron/results",{method:"POST"});const d=await r.json();alert(d.message||JSON.stringify(d));load();}catch(e){alert("Failed: "+e.message);}}} style={{...btn("#D4AF37"),padding:"10px 20px",fontSize:13}}>{"\u2705"} Check Results</button>
+                <button onClick={()=>setModal(true)} style={{...btn("#0B9635"),padding:"10px 20px",fontSize:13}}>+ Create Round</button>
+              </div>
             </div>
 
             {preds.length===0?<div style={{...card,textAlign:"center",padding:48,color:"#444"}}><div style={{fontSize:48,marginBottom:8}}>🎮</div>No rounds yet. Create one to get started.</div>:
@@ -678,11 +773,15 @@ export default function AdminDash() {
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={badge(r.status==="live"?"#8B5CF618":"#44444418",r.status==="live"?"#8B5CF6":"#444")}>{r.status==="live"?"🟢 LIVE":r.status==="draft"?"📝 Draft":r.status==="expired"?"⏰ Expired":"🔴 Closed"}</span>
+                    {r.aiGenerated&&<span style={badge("#8B5CF610","#8B5CF6")}>{"\u{1F916}"} AI {r.aiPackageTier?r.aiPackageTier.toUpperCase():""}{r.aiConfidence?` ${r.aiConfidence}%`:""}</span>}
                     <span style={{fontSize:12,color:"#555"}}>{r.matches?.length||0} matches • {(r.claimedBy||[]).length} claims</span>
+                    {r.result&&r.result!=="pending"&&<span style={badge(r.result==="won"?"#0B963518":"#E3172518",r.result==="won"?"#0B9635":"#E31725")}>{r.result==="won"?"✅ WON":"❌ LOST"}</span>}
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     {r.status==="live"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"close"})});load();}} style={{padding:"6px 12px",background:"#0B963510",border:"1px solid #0B963520",borderRadius:6,color:"#0B9635",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Close</button>}
                     {r.status==="draft"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"publish",expiresInMinutes:60})});load();}} style={{padding:"6px 12px",background:"#8B5CF6",border:"none",borderRadius:6,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Publish</button>}
+                    {(r.status==="closed"||r.status==="expired"||(r.claimedBy||[]).length>0)&&r.result!=="won"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"result",result:"won"})});load();}} style={{padding:"6px 12px",background:"#0B963510",border:"1px solid #0B963520",borderRadius:6,color:"#0B9635",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>✅ Won</button>}
+                    {(r.status==="closed"||r.status==="expired"||(r.claimedBy||[]).length>0)&&r.result!=="lost"&&<button onClick={async()=>{await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"result",result:"lost"})});load();}} style={{padding:"6px 12px",background:"#E3172510",border:"1px solid #E3172520",borderRadius:6,color:"#E31725",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>❌ Lost</button>}
                     <button onClick={async()=>{if(confirm("Delete this round?")){await fetch("/api/rounds",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({roundId:r._id,action:"delete"})});load();}}} style={{padding:"6px 12px",background:"#151820",border:"1px solid #1E2028",borderRadius:6,color:"#555",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>🗑</button>
                   </div>
                 </div>
@@ -726,7 +825,7 @@ export default function AdminDash() {
               {approved.filter(u=>!u.referralCode).length===0?<div style={{textAlign:"center",padding:20,color:"#444"}}>All approved users have referral codes</div>:
               approved.filter(u=>!u.referralCode).map((u,i)=>(
                 <div key={u._id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:i<approved.filter(x=>!x.referralCode).length-1?"1px solid #151820":"none"}}>
-                  <div><div style={{fontWeight:700}}>{u.name}</div><div style={{fontSize:11,color:"#444"}}>{u.phone} • {getPkg(u.package).icon} {getPkg(u.package).name}</div></div>
+                  <div><div style={{fontWeight:700}}>{u.name}</div><div style={{fontSize:11,color:"#444"}}>{u.phone} • {(()=>{const gv=u.gamePackages?Object.values(typeof u.gamePackages==="object"?u.gamePackages:{}):[];const fp=gv[0];const pk=fp?getPkg(fp.package):NOPKG;return pk.icon+" "+pk.name;})()}</div></div>
                   <button onClick={()=>generateCode(u._id)} style={{...btn("#0B9635"),padding:"8px 20px"}}>Generate Code</button>
                 </div>
               ))}
@@ -782,7 +881,7 @@ export default function AdminDash() {
             ):pkgRequests.map((r,i)=>{
               const pc={gold:"#D4AF37",platinum:"#94A7BD",diamond:"#7DD3E8"};
               const pi={gold:"🥇",platinum:"🥈",diamond:"💎"};
-              const gc={["instant-virtual"]:"⚽",egames:"🎮",["sporty-hero"]:"🦸",["spin-bottle"]:"🍾"};
+              const gc={football:"⚽",["virtual-football"]:"⚽",egames:"⚽",["instant-virtual"]:"⚽"};
               const c=pc[r.packageId]||"#D4AF37";
               return(
                 <div key={r.userId+r.gameId} className={"as d"+Math.min(i+1,5)} style={{...card,borderColor:c+"30"}}>
@@ -798,12 +897,12 @@ export default function AdminDash() {
                       <span style={{fontWeight:700,color:"#F0F0F2"}}>{gc[r.gameId]||"🎮"} {r.gameName}</span>
 
                       <span style={{color:"#444",fontWeight:600}}>Package:</span>
-                      <span style={{fontWeight:700,color:c}}>{pi[r.packageId]} {r.packageName} — GH₵{r.packagePrice}</span>
+                      <span style={{fontWeight:700,color:c}}>{pi[r.packageId]} {r.packageName} — ${r.packagePrice}</span>
 
                       <span style={{color:"#444",fontWeight:600}}>Provider:</span>
-                      <span style={{fontWeight:700,color:r.paymentProvider==="mtn"?"#FFC300":r.paymentProvider==="telecel"?"#E40521":"#0056A3"}}>{r.providerName}</span>
+                      <span style={{fontWeight:700,color:"#0B9635"}}>{r.providerName}</span>
 
-                      <span style={{color:"#444",fontWeight:600}}>{r.paymentProvider==="mtn"?"Transaction Code:":r.paymentProvider==="telecel"?"Transaction ID:":"Reference:"}</span>
+                      <span style={{color:"#444",fontWeight:600}}>Reference:</span>
                       <span style={{fontWeight:700,color:"#0B9635",fontFamily:"monospace",fontSize:14,letterSpacing:1}}>{r.referenceNumber}</span>
 
                       {r.senderName&&<><span style={{color:"#444",fontWeight:600}}>Sender/Merchant:</span><span style={{fontWeight:700,color:"#F0F0F2"}}>{r.senderName}</span></>}
@@ -814,7 +913,7 @@ export default function AdminDash() {
                   </div>
 
                   <div style={{background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#D4AF37",lineHeight:1.6}}>
-                    💡 <strong>Verify:</strong> Check {r.providerName} for {r.paymentProvider==="mtn"?"code":"ID"} <strong>{r.referenceNumber}</strong>{r.senderName?` from ${r.senderName}`:""} — <strong>GH₵{r.packagePrice}</strong> for {r.gameName}
+                    💡 <strong>Verify:</strong> Check {r.providerName} for reference <strong>{r.referenceNumber}</strong>{r.senderName?` from ${r.senderName}`:""} — <strong>${r.packagePrice}</strong> for {r.gameName}
                   </div>
 
                   <div style={{display:"flex",gap:8}}>
@@ -832,7 +931,7 @@ export default function AdminDash() {
             <p style={{fontSize:14,color:"#555",marginBottom:20}}>All payments and revenue tracking</p>
 
             <div className="agrid3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
-              <div style={stat}><div style={lbl}>💰 TOTAL REVENUE</div><div style={{...val,fontSize:28,color:"#0B9635"}}>{fG(totalRevenue)}</div><div style={{fontSize:10,color:"#444"}}>≈ ${(totalRevenue*R).toFixed(0)} USD</div></div>
+              <div style={stat}><div style={lbl}>💰 TOTAL REVENUE</div><div style={{...val,fontSize:28,color:"#0B9635"}}>{fG(totalRevenue)}</div><button onClick={async()=>{if(!confirm("Reset ALL revenue to $0.00? This cannot be undone."))return;try{const r=await fetch("/api/admin/dashboard",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"reset_revenue"})});if(r.ok){toast.success("Revenue reset to zero");load();}else{toast.error("Failed to reset");}}catch(e){toast.error("Network error");}}} style={{marginTop:8,padding:"6px 12px",background:"#E3172515",color:"#E31725",border:"1px solid #E3172530",borderRadius:6,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>Reset Revenue</button></div>
               <div style={stat}><div style={lbl}>📋 TOTAL PAYMENTS</div><div style={{...val,fontSize:28}}>{approved.length}</div><div style={{fontSize:10,color:"#444"}}>{pending.length} pending</div></div>
               <div style={stat}><div style={lbl}>🔗 REFERRAL PAYOUTS</div><div style={{...val,fontSize:28,color:"#D4AF37"}}>{fG(refData.stats?.totalBonusPaid||0)}</div><div style={{fontSize:10,color:"#444"}}>{refData.stats?.totalOutstanding||0} outstanding</div></div>
             </div>
@@ -850,14 +949,14 @@ export default function AdminDash() {
             <div style={section}>ALL PAYMENT RECORDS</div>
             <div className="atable-wrap"><table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead><tr>{["User","Phone","Package","Ref #","Provider","Amount","Status","Date"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 8px",color:"#444",fontSize:10,fontWeight:700,letterSpacing:1.5,borderBottom:"1px solid #151820"}}>{h}</th>)}</tr></thead>
-              <tbody>{users.filter(u=>u.status!=="rejected").map(u=>{const p=getPkg(u.package);return(
+              <tbody>{users.filter(u=>u.status!=="rejected").map(u=>{const gv=u.gamePackages?Object.values(typeof u.gamePackages==="object"?u.gamePackages:{}):[];const fp=gv[0];const p=fp?getPkg(fp.package):NOPKG;return(
                 <tr key={u._id} style={{borderBottom:"1px solid #15182080"}}>
                   <td style={{padding:"10px 8px",fontWeight:600}}>{u.name}</td>
                   <td style={{padding:"10px 8px",color:"#555"}}>{u.phone}</td>
                   <td style={{padding:"10px 8px"}}><span style={badge(p.color+"18",p.color)}>{p.icon} {p.name}</span></td>
                   <td style={{padding:"10px 8px",fontFamily:"monospace",fontSize:11,color:"#0B9635",fontWeight:700}}>{u.referenceNumber}</td>
                   <td style={{padding:"10px 8px",color:"#555",textTransform:"uppercase",fontSize:11}}>{u.paymentProvider||"—"}</td>
-                  <td style={{padding:"10px 8px",color:"#0B9635",fontWeight:700}}>{fG(u.amountPaidGHS||FEE)}</td>
+                  <td style={{padding:"10px 8px",color:"#0B9635",fontWeight:700}}>{fG(u.amountPaid||FEE)}</td>
                   <td style={{padding:"10px 8px"}}><span style={badge(u.status==="approved"?"#0B963518":"#D4AF3718",u.status==="approved"?"#0B9635":"#D4AF37")}>{u.status==="approved"?"Paid":"Pending"}</span></td>
                   <td style={{padding:"10px 8px",fontSize:11,color:"#444"}}>{tAgo(u.createdAt)}</td>
                 </tr>
@@ -910,28 +1009,56 @@ export default function AdminDash() {
 
           {/* ═══ BROADCAST ═══ */}
           {tab==="broadcast"&&(<div className="as">
-            <h1 style={{...val,fontSize:28,marginBottom:4}}>Broadcast Messages</h1>
-            <p style={{fontSize:14,color:"#555",marginBottom:20}}>Send announcements to all approved users ({approved.length})</p>
+            <h1 style={{...val,fontSize:28,marginBottom:4}}>Broadcast Center</h1>
+            <p style={{fontSize:14,color:"#555",marginBottom:20}}>Send announcements to all {approved.length} approved users</p>
 
-            <div style={{...card,borderColor:"#0B963520"}}>
-              <div style={{marginBottom:14}}><label style={{...lbl,display:"block",marginBottom:5}}>SUBJECT</label><input value={broadcastForm.subject} onChange={e=>setBroadcastForm(f=>({...f,subject:e.target.value}))} placeholder="e.g. System Update, New Feature" style={{width:"100%",padding:"12px 14px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>
-              <div style={{marginBottom:14}}><label style={{...lbl,display:"block",marginBottom:5}}>MESSAGE</label><textarea value={broadcastForm.body} onChange={e=>setBroadcastForm(f=>({...f,body:e.target.value}))} placeholder="Type your announcement..." style={{width:"100%",padding:"12px 14px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none",minHeight:100,resize:"vertical"}} /></div>
-              <button onClick={sendBroadcast} disabled={sending||!broadcastForm.body.trim()} style={{...btn("#0B9635"),padding:"14px 24px",fontSize:14,opacity:!broadcastForm.body.trim()?.5:1,width:"100%"}}>{sending?"Sending...":"📢 Broadcast to "+approved.length+" Users"}</button>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              {/* Compose */}
+              <div style={{...card,borderColor:"#0B963520"}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#0B9635",letterSpacing:1.5,marginBottom:14}}>COMPOSE</div>
+                <div style={{marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><label style={lbl}>SUBJECT</label><span style={{fontSize:10,color:broadcastForm.subject.length>100?"#E31725":"#444"}}>{broadcastForm.subject.length}/100</span></div>
+                  <input value={broadcastForm.subject} onChange={e=>setBroadcastForm(f=>({...f,subject:e.target.value.slice(0,100)}))} placeholder="e.g. System Update, New Feature" style={{width:"100%",padding:"12px 14px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} />
+                </div>
+                <div style={{marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><label style={lbl}>MESSAGE</label><span style={{fontSize:10,color:broadcastForm.body.length>500?"#E31725":"#444"}}>{broadcastForm.body.length}/500</span></div>
+                  <textarea value={broadcastForm.body} onChange={e=>setBroadcastForm(f=>({...f,body:e.target.value.slice(0,500)}))} placeholder="Type your announcement message..." style={{width:"100%",padding:"12px 14px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none",minHeight:140,resize:"vertical"}} />
+                </div>
+                <div style={{background:"#0B963508",border:"1px solid #0B963520",borderRadius:10,padding:"12px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:18}}>👥</span>
+                  <span style={{fontSize:13,color:"#888"}}>Will be sent to <strong style={{color:"#0B9635"}}>{approved.length}</strong> approved users</span>
+                </div>
+                <button onClick={()=>{if(!broadcastForm.body.trim())return;if(!confirm(`Send this broadcast to ${approved.length} users?\n\nSubject: ${broadcastForm.subject||"(none)"}\nMessage: ${broadcastForm.body.slice(0,80)}...`))return;sendBroadcast()}} disabled={sending||!broadcastForm.body.trim()} style={{...btn("#0B9635"),padding:"14px 24px",fontSize:14,opacity:!broadcastForm.body.trim()?.5:1,width:"100%"}}>{sending?"Sending...":"📢 Send Broadcast"}</button>
+              </div>
+
+              {/* Preview */}
+              <div style={{...card,borderColor:"#1E2028"}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#888",letterSpacing:1.5,marginBottom:14}}>PREVIEW</div>
+                <div style={{background:"#0B0D10",borderRadius:12,padding:16,border:"1px solid #1E2028"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                    <div style={{width:32,height:32,borderRadius:8,background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>📢</div>
+                    <div><div style={{fontWeight:700,fontSize:13}}>BetGenius AI</div><div style={{fontSize:10,color:"#444"}}>System Notification</div></div>
+                  </div>
+                  {broadcastForm.subject&&<div style={{fontWeight:700,fontSize:14,color:"#F0F0F2",marginBottom:4}}>{broadcastForm.subject}</div>}
+                  <div style={{fontSize:13,color:"#888",lineHeight:1.6}}>{broadcastForm.body||"Your message will appear here..."}</div>
+                </div>
+                <div style={{marginTop:12,fontSize:11,color:"#333",textAlign:"center"}}>This is how users will see the notification</div>
+              </div>
             </div>
 
-            <div style={section}>PREVIOUS BROADCASTS</div>
+            <div style={section}>BROADCAST HISTORY ({broadcasts.length})</div>
             {broadcasts.length===0?<div style={{...card,textAlign:"center",padding:28,color:"#444"}}>No broadcasts sent yet</div>:
             broadcasts.map((b,i)=>(
-              <div key={b._id||i} className={"as d"+Math.min(i+1,5)} style={card}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <span style={{fontWeight:700}}>{b.title||"Announcement"}</span>
-                  <span style={{fontSize:10,color:"#444"}}>{tAgo(b.createdAt)}</span>
+              <div key={b._id||i} className={"as d"+Math.min(i+1,5)} style={{...card,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                    <span style={{fontWeight:700,fontSize:14}}>{b.title||"Announcement"}</span>
+                    <span style={{background:"#0B963510",color:"#0B9635",padding:"2px 8px",borderRadius:6,fontSize:10,fontWeight:700}}>{b.sentTo} recipients</span>
+                  </div>
+                  <div style={{fontSize:13,color:"#888",lineHeight:1.5,marginBottom:4}}>{b.message?.length>120?b.message.slice(0,120)+"...":b.message}</div>
+                  <div style={{fontSize:10,color:"#333"}}>Sent {fDate(b.createdAt)} by {b.sentBy||"Admin"}</div>
                 </div>
-                <div style={{fontSize:13,color:"#888",lineHeight:1.6,marginBottom:8}}>{b.message}</div>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{fontSize:11,color:"#444"}}>Sent to {b.sentTo} users by {b.sentBy||"Admin"}</div>
-                  <button onClick={async()=>{if(confirm("Delete this broadcast?")){await fetch("/api/admin/broadcast",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({broadcastId:b._id})});load();}}} style={{background:"#151820",border:"1px solid #1E2028",borderRadius:6,padding:"4px 10px",color:"#555",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'"}}>🗑</button>
-                </div>
+                <button onClick={async()=>{if(confirm("Delete this broadcast?")){await fetch("/api/admin/broadcast",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({broadcastId:b._id})});load();}}} style={{background:"#E3172508",border:"1px solid #E3172520",borderRadius:8,padding:"6px 12px",color:"#E31725",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",flexShrink:0}}>Delete</button>
               </div>
             ))}
           </div>)}
@@ -949,26 +1076,26 @@ export default function AdminDash() {
 
             <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>💰 PRICING</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
-                {l:"Signup Fee (GH₵)",k:"signupFeeGHS",type:"number"},
-                {l:"Referral Bonus (GH₵)",k:"referralBonusGHS",type:"number"},
+                {l:"Signup Fee ($)",k:"signupFee",type:"number"},
+                {l:"Referral Bonus ($)",k:"referralBonus",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
             <div style={{...card,borderColor:"#D4AF3720"}}><div style={{fontSize:12,fontWeight:700,color:"#D4AF37",marginBottom:14}}>🥇 GOLD PACKAGE</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{[
-                {l:"Price (GH₵)",k:"goldPrice",type:"number"},{l:"Max Predictions",k:"goldMaxPreds",type:"number"},{l:"Odds Range",k:"goldOdds"},{l:"Duration (Days)",k:"goldDurationDays",type:"number"},
+                {l:"Price ($)",k:"goldPrice",type:"number"},{l:"Max Predictions",k:"goldMaxPreds",type:"number"},{l:"Odds Range",k:"goldOdds"},{l:"Duration (Days)",k:"goldDurationDays",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
             <div style={{...card,borderColor:"#94A7BD20"}}><div style={{fontSize:12,fontWeight:700,color:"#94A7BD",marginBottom:14}}>🥈 PLATINUM PACKAGE</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{[
-                {l:"Price (GH₵)",k:"platinumPrice",type:"number"},{l:"Max Predictions",k:"platinumMaxPreds",type:"number"},{l:"Odds Range",k:"platinumOdds"},{l:"Duration (Days)",k:"platinumDurationDays",type:"number"},
+                {l:"Price ($)",k:"platinumPrice",type:"number"},{l:"Max Predictions",k:"platinumMaxPreds",type:"number"},{l:"Odds Range",k:"platinumOdds"},{l:"Duration (Days)",k:"platinumDurationDays",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
             <div style={{...card,borderColor:"#7DD3E820"}}><div style={{fontSize:12,fontWeight:700,color:"#7DD3E8",marginBottom:14}}>💎 DIAMOND PACKAGE</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>{[
-                {l:"Price (GH₵)",k:"diamondPrice",type:"number"},{l:"Max Predictions",k:"diamondMaxPreds",type:"number"},{l:"Odds Range",k:"diamondOdds"},{l:"Duration (Days)",k:"diamondDurationDays",type:"number"},
+                {l:"Price ($)",k:"diamondPrice",type:"number"},{l:"Max Predictions",k:"diamondMaxPreds",type:"number"},{l:"Odds Range",k:"diamondOdds"},{l:"Duration (Days)",k:"diamondDurationDays",type:"number"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input type={f.type||"text"} value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:f.type==="number"?Number(e.target.value):e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
@@ -977,24 +1104,24 @@ export default function AdminDash() {
               <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Set a single merchant number that works across all networks. If set, this overrides per-network numbers below.</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
                 {l:"Merchant Number",k:"merchantMomoNumber"},{l:"Merchant Name",k:"merchantMomoName"},
-              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} placeholder={f.k==="merchantMomoNumber"?"e.g. 0547610318":"e.g. VirtualBet GH"} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
+              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} placeholder={f.k==="merchantMomoNumber"?"e.g. 0547610318":"e.g. BetGenius AI"} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
-            <div style={{...card,borderColor:"#FFC30020"}}><div style={{fontSize:12,fontWeight:700,color:"#FFC300",marginBottom:14}}>💳 MTN MOBILE MONEY {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
+            <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>💳 MOBILE WALLET 1 {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,opacity:settingsForm.merchantMomoNumber?.5:1}}>{[
-                {l:"Number",k:"mtnNumber"},{l:"Account Name",k:"mtnName"},
+                {l:"Provider Name",k:"momoProvider1Name"},{l:"Number",k:"momoProvider1Number"},{l:"Account Name",k:"momoProvider1Account"},
+              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} placeholder={f.k.includes("Name")&&!f.k.includes("Account")?"e.g. M-Pesa, MTN MoMo":""} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
+            </div>
+
+            <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>💳 MOBILE WALLET 2</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+                {l:"Provider Name",k:"momoProvider2Name"},{l:"Number",k:"momoProvider2Number"},{l:"Account Name",k:"momoProvider2Account"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
-            <div style={{...card,borderColor:"#E4052120"}}><div style={{fontSize:12,fontWeight:700,color:"#E40521",marginBottom:14}}>💳 TELECEL CASH {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,opacity:settingsForm.merchantMomoNumber?.5:1}}>{[
-                {l:"Number",k:"telecelNumber"},{l:"Account Name",k:"telecelName"},
-              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
-            </div>
-
-            <div style={{...card,borderColor:"#0056A320"}}><div style={{fontSize:12,fontWeight:700,color:"#0056A3",marginBottom:14}}>💳 AIRTELTIGO MONEY {settingsForm.merchantMomoNumber?"(Overridden by Merchant)":""}</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,opacity:settingsForm.merchantMomoNumber?.5:1}}>{[
-                {l:"Number",k:"airteltigoNumber"},{l:"Account Name",k:"airteltigoName"},
+            <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>💳 MOBILE WALLET 3</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+                {l:"Provider Name",k:"momoProvider3Name"},{l:"Number",k:"momoProvider3Number"},{l:"Account Name",k:"momoProvider3Account"},
               ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>))}</div>
             </div>
 
@@ -1016,38 +1143,43 @@ export default function AdminDash() {
       </div>
 
       {/* ═══ USER DETAIL MODAL ═══ */}
-      {userModal&&(()=>{const u=userModal;const p=getPkg(u.package);const rev=FEE+p.price;const isLocked=(u.predictionsUsed||0)>=p.max;return(
+      {userModal&&(()=>{const u=userModal;const gp=u.gamePackages?(typeof u.gamePackages==='object'?Object.values(u.gamePackages):[]):[];const firstPkg=gp[0];const p=firstPkg?getPkg(firstPkg.package):NOPKG;const rev=u.amountPaid||0;const isLocked=(firstPkg?.predictionsUsed||0)>=p.max;return(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:20}} onClick={()=>setUserModal(null)}>
           <div style={{background:"#12141A",border:"1px solid #1E2028",borderRadius:20,padding:32,maxWidth:480,width:"100%",maxHeight:"85vh",overflowY:"auto",animation:"scaleIn .3s cubic-bezier(.16,1,.3,1)",position:"relative"}} onClick={e=>e.stopPropagation()}>
             <button onClick={()=>setUserModal(null)} style={{position:"absolute",top:14,right:14,background:"none",border:"none",color:"#555",fontSize:20,cursor:"pointer"}}>✕</button>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
               <div style={{width:48,height:48,borderRadius:12,background:"#0B9635",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:16,color:"#fff"}}>{u.avatar||u.name?.slice(0,2)}</div>
-              <div><div style={{fontWeight:700,fontSize:18}}>{u.name}</div><span style={badge(u.status==="approved"?"#0B963518":"#0B963518",u.status==="approved"?"#0B9635":"#0B9635")}>{u.status}</span></div>
+              <div><div style={{fontWeight:700,fontSize:18}}>{u.name}</div><span style={badge(u.status==="approved"?"#0B963518":u.status==="pending"?"#D4AF3718":"#E3172518",u.status==="approved"?"#0B9635":u.status==="pending"?"#D4AF37":"#E31725")}>{u.status}</span></div>
             </div>
             <div style={{background:"#0B0D10",borderRadius:12,padding:18,marginBottom:16}}>
               {[
-                {l:"Phone",v:u.phone},{l:"Email",v:u.email||"—"},{l:"SportyBet",v:u.sportyBetId||"—",c:"#0B9635"},
+                {l:"Phone",v:u.phone},{l:"Email",v:u.email||"—"},{l:"Betting ID",v:u.bettingId||"—",c:"#0B9635"},
                 {l:"Package",v:`${p.icon} ${p.name} — ${p.max} predictions`,c:p.color},
-                {l:"Predictions Used",v:`${u.predictionsUsed||0}/${p.max}${isLocked?" (LOCKED)":""}`,c:isLocked?"#0B9635":"#0B9635"},
-                {l:"Revenue",v:fB(rev),c:"#0B9635"},
-                {l:"Referral Code",v:u.referralCode||"Not assigned yet"},{l:"Referred By",v:u.referredBy||"None"},{l:"Referral Balance",v:fB(u.referralBalance||0),c:"#0B9635"},{l:"Total Earned",v:fB(u.referralTotalEarned||0),c:"#0B9635"},{l:"Referral Count",v:String(u.referralCount||0)},
+                {l:"Predictions Used",v:`${firstPkg?.predictionsUsed||0}/${p.max}${isLocked?" (LOCKED)":""}`,c:isLocked?"#E31725":"#0B9635"},
+                {l:"Revenue",v:fG(rev),c:"#0B9635"},
+                {l:"Referral Code",v:u.referralCode||"Not assigned yet"},{l:"Referred By",v:u.referredBy||"None"},{l:"Referral Balance",v:fG(u.referralBalance||0),c:"#0B9635"},{l:"Total Earned",v:fG(u.referralTotalEarned||0),c:"#0B9635"},{l:"Referral Count",v:String(u.referralCount||0)},
                 {l:"Reference",v:u.referenceNumber||"—",m:true},{l:"Provider",v:u.paymentProvider||"—"},
                 {l:"Joined",v:fDate(u.createdAt)},
               ].map((r,i)=>(
-                <div key={r.l} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<10?"1px solid #151820":"none"}}>
+                <div key={r.l} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<12?"1px solid #151820":"none"}}>
                   <span style={{color:"#444",fontSize:12}}>{r.l}</span>
                   <span style={{color:r.c||"#F0F0F2",fontWeight:600,fontSize:13,fontFamily:r.m?"monospace":"inherit"}}>{r.v}</span>
                 </div>
               ))}
+              {u.paymentProofUrl&&<div style={{marginTop:12,borderTop:"1px solid #151820",paddingTop:12}}><div style={{fontSize:11,color:"#444",fontWeight:700,letterSpacing:1,marginBottom:6}}>PAYMENT PROOF</div><img src={u.paymentProofUrl} alt="Payment proof" onClick={()=>window.open(u.paymentProofUrl,"_blank")} style={{maxWidth:"100%",maxHeight:180,borderRadius:10,border:"1px solid #1E2028",cursor:"pointer",objectFit:"cover"}} /></div>}
             </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {u.status==="pending"&&<button onClick={()=>{approve(u._id);setUserModal(null)}} style={{...btn("#0B9635"),flex:1,padding:12,fontSize:13}}>✓ Approve</button>}
               {u.status==="approved"&&<>
-                {u.package!=="platinum"&&<button onClick={()=>upgradeUser(u._id,"platinum")} style={{...btn("#94A7BD","#000"),flex:1,padding:12,fontSize:12}}>→ Platinum</button>}
-                {u.package!=="diamond"&&<button onClick={()=>upgradeUser(u._id,"diamond")} style={{...btn("#7DD3E8","#000"),flex:1,padding:12,fontSize:12}}>→ Diamond</button>}
-                {isLocked&&<button onClick={()=>upgradeUser(u._id,u.package)} style={{...btn("#0B9635"),flex:1,padding:12,fontSize:12}}>♻️ Reset Preds</button>}
+                {p.id!=="platinum"&&p.id!=="diamond"&&<button onClick={()=>upgradeUser(u._id,"platinum")} style={{...btn("#94A7BD","#000"),flex:1,padding:12,fontSize:12}}>→ Platinum</button>}
+                {p.id!=="diamond"&&<button onClick={()=>upgradeUser(u._id,"diamond")} style={{...btn("#7DD3E8","#000"),flex:1,padding:12,fontSize:12}}>→ Diamond</button>}
+                {isLocked&&<button onClick={()=>upgradeUser(u._id,firstPkg?.package||"gold")} style={{...btn("#0B9635"),flex:1,padding:12,fontSize:12}}>♻️ Reset Preds</button>}
                 {!u.referralCode&&<button onClick={()=>generateCode(u._id)} style={{...btn("#D4AF37","#000"),flex:1,padding:12,fontSize:12}}>🔗 Generate Code</button>}
               </>}
+              {(u.status==="approved"||u.status==="pending")&&<button onClick={async()=>{if(!confirm("Ban this user permanently?"))return;await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"banned"})});setUserModal(null);load()}} style={{...btn("#E31725"),padding:12,fontSize:12}}>🚫 Ban</button>}
+              {(u.status==="approved"||u.status==="pending")&&<button onClick={async()=>{if(!confirm("Block this user temporarily?"))return;await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"blocked"})});setUserModal(null);load()}} style={{...btn("#D4AF37","#000"),padding:12,fontSize:12}}>🔒 Block</button>}
+              {(u.status==="approved"||u.status==="pending")&&<button onClick={async()=>{if(!confirm("Suspend this user?"))return;await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"suspended"})});setUserModal(null);load()}} style={{...btn("#94A7BD","#000"),padding:12,fontSize:12}}>⏸ Suspend</button>}
+              {(u.status==="banned"||u.status==="blocked"||u.status==="suspended")&&<button onClick={async()=>{await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"approved"})});setUserModal(null);load()}} style={{...btn("#0B9635"),flex:1,padding:12,fontSize:12}}>✓ Unblock / Reactivate</button>}
               <button onClick={()=>remove(u._id)} style={{...btn("#076B25"),padding:12,fontSize:12}}>🗑 Delete</button>
             </div>
           </div>
@@ -1063,15 +1195,22 @@ export default function AdminDash() {
             <p style={{fontSize:12,color:"#444",marginBottom:14}}>3 matches → publish live → users unlock with 1 credit</p>
 
             {/* Game toggle */}
-            <div style={{display:"flex",gap:6,marginBottom:14}}>
-              {[{id:"instant-virtual",icon:"⚽",name:"Instant Virtual",c:"#0B9635"},{id:"egames",icon:"🎮",name:"eGames",c:"#8B5CF6"}].map(g=>(
-                <button key={g.id} onClick={()=>setMf(f=>({...f,gameId:g.id}))} style={{flex:1,padding:10,borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",border:mf.gameId===g.id?`2px solid ${g.c}`:"2px solid #1E2028",background:mf.gameId===g.id?g.c+"12":"transparent",color:mf.gameId===g.id?g.c:"#555"}}>{g.icon} {g.name}</button>
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
+              {[{id:"football",icon:"\u26BD",name:"Football",c:"#0B9635"},{id:"basketball",icon:"\u{1F3C0}",name:"Basketball",c:"#E36414"},{id:"tennis",icon:"\u{1F3BE}",name:"Tennis",c:"#D4AF37"}].map(g=>(
+                <button key={g.id} onClick={()=>{const defMkt=g.id==="basketball"?"Moneyline":g.id==="tennis"?"Match Winner":"1X2";setMf(f=>({...f,gameId:g.id,matches:f.matches.map(m=>({...m,mkt:defMkt,pick:""}))}))}} style={{flex:1,padding:10,borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",border:mf.gameId===g.id?`2px solid ${g.c}`:"2px solid #1E2028",background:mf.gameId===g.id?g.c+"12":"transparent",color:mf.gameId===g.id?g.c:"#555"}}>{g.icon} {g.name}</button>
               ))}
+            </div>
+
+            {/* Free Bet Toggle */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,background:mf.isFree?"#0B963510":"#0B0D10",border:mf.isFree?"1px solid #0B963530":"1px solid #1E2028",borderRadius:10,padding:"10px 14px",cursor:"pointer"}} onClick={()=>setMf(f=>({...f,isFree:!f.isFree}))}>
+              <div style={{width:36,height:20,borderRadius:10,background:mf.isFree?"#0B9635":"#1E2028",position:"relative",transition:"all .2s"}}><div style={{width:16,height:16,borderRadius:8,background:"#fff",position:"absolute",top:2,left:mf.isFree?18:2,transition:"all .2s"}} /></div>
+              <span style={{fontSize:12,fontWeight:700,color:mf.isFree?"#0B9635":"#555"}}>FREE BET</span>
+              {mf.isFree && <span style={{fontSize:10,color:"#888",marginLeft:"auto"}}>Visible to all approved users — no credits needed</span>}
             </div>
 
             {/* 3 Match slots */}
             {mf.matches.map((m,i)=>{
-              const gc = mf.gameId==="egames"?"#8B5CF6":"#0B9635";
+              const gc = "#0B9635";
               const opts = MKTS[m.mkt] || MKTS["1X2"];
               return(
                 <div key={i} style={{background:"#0B0D10",border:"1px solid #1E2028",borderRadius:14,padding:14,marginBottom:10}}>
@@ -1099,8 +1238,8 @@ export default function AdminDash() {
               );
             })}
 
-            {/* SportyBet link */}
-            <div style={{marginBottom:10}}><div style={lbl}>SPORTYBET LINK (optional)</div><input value={mf.sportyLink||""} onChange={e=>setMf(f=>({...f,sportyLink:e.target.value}))} placeholder="https://www.sportybet.com/gh/..." style={{width:"100%",padding:"10px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:12,fontFamily:"'DM Sans'",outline:"none"}} /></div>
+            {/* Betting link */}
+            <div style={{marginBottom:10}}><div style={lbl}>BETTING LINK (optional)</div><input value={mf.bettingLink||""} onChange={e=>setMf(f=>({...f,bettingLink:e.target.value}))} placeholder="https://..." style={{width:"100%",padding:"10px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:12,fontFamily:"'DM Sans'",outline:"none"}} /></div>
 
             {/* Expire + Note */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>

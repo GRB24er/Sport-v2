@@ -11,8 +11,9 @@ const gamePackageSchema = new mongoose.Schema({
 const pendingRequestSchema = new mongoose.Schema({
   package: { type: String, enum: ["gold", "platinum", "diamond"], required: true },
   referenceNumber: { type: String, required: true },
-  paymentProvider: { type: String, required: true }, // "mtn", "telecel", "airteltigo", "usdt_trc20", "usdt_erc20", "btc"
+  paymentProvider: { type: String, required: true },
   senderName: { type: String, default: "" },
+  paymentProofUrl: { type: String, default: "" },
   date: { type: Date, default: Date.now },
 }, { _id: false });
 
@@ -27,16 +28,16 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 6, select: false },
 
     role: { type: String, enum: ["user", "admin"], default: "user" },
-    status: { type: String, enum: ["pending", "approved", "rejected", "suspended"], default: "pending" },
+    status: { type: String, enum: ["pending", "approved", "rejected", "suspended", "banned", "blocked"], default: "pending" },
 
     gamePackages: { type: Map, of: gamePackageSchema, default: {} },
     pendingGamePackages: { type: Map, of: pendingRequestSchema, default: {} },
 
     referenceNumber: { type: String, required: true, trim: true },
     paymentProvider: { type: String, default: "" },
-    amountPaidGHS: { type: Number, default: 0 },
+    amountPaid: { type: Number, default: 0 },
 
-    sportyBetId: { type: String, trim: true },
+    bettingId: { type: String, trim: true },
 
     referralCode: { type: String, default: null, trim: true },
     referredBy: { type: String, default: null, trim: true },
@@ -44,6 +45,7 @@ const userSchema = new mongoose.Schema(
     referralTotalEarned: { type: Number, default: 0 },
     referralCount: { type: Number, default: 0 },
 
+    paymentProofUrl: { type: String, default: "" },
     avatar: { type: String, default: "" },
     approvedAt: { type: Date, default: null },
     approvedBy: { type: String, default: null },

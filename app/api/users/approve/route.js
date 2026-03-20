@@ -7,7 +7,7 @@ import User from "@/models/User";
 import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
 
-const REFERRAL_BONUS_DEF = 10;
+const REFERRAL_BONUS_DEF = 2;
 
 export async function POST(req) {
   try {
@@ -26,7 +26,7 @@ export async function POST(req) {
     await user.save();
 
     let REFERRAL_BONUS = REFERRAL_BONUS_DEF;
-    try { const s = await Settings.findOne({ key: "main" }).lean(); if (s?.referralBonusGHS) REFERRAL_BONUS = s.referralBonusGHS; } catch (e) {}
+    try { const s = await Settings.findOne({ key: "main" }).lean(); if (s?.referralBonus) REFERRAL_BONUS = s.referralBonus; } catch (e) {}
 
     if (user.referredBy) {
       const referrer = await User.findOne({ referralCode: user.referredBy, status: "approved" });
@@ -35,11 +35,11 @@ export async function POST(req) {
         referrer.referralTotalEarned = (referrer.referralTotalEarned || 0) + REFERRAL_BONUS;
         referrer.referralCount = (referrer.referralCount || 0) + 1;
         await referrer.save();
-        await Notification.create({ type: "referral", message: `🎉 You earned GH₵${REFERRAL_BONUS} referral bonus! ${user.name} just got approved.`, forUserId: referrer._id });
+        await Notification.create({ type: "referral", message: `🎉 You earned $${REFERRAL_BONUS} referral bonus! ${user.name} just got approved.`, forUserId: referrer._id });
       }
     }
 
-    await Notification.create({ type: "approval", message: `✅ Your account has been approved! Welcome to VirtualBet.`, forUserId: user._id });
+    await Notification.create({ type: "approval", message: `✅ Your account has been approved! Welcome to BetGenius AI.`, forUserId: user._id });
     return NextResponse.json({ message: `${user.name} approved` });
   } catch (e) {
     console.error("Approve error:", e);

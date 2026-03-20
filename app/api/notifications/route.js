@@ -39,7 +39,11 @@ export async function PATCH(req) {
       const query = session.user.role === "admin" ? { forAdmin: true } : { forUserId: session.user.id };
       await Notification.updateMany(query, { read: true });
     } else if (notificationId) {
-      await Notification.findByIdAndUpdate(notificationId, { read: true });
+      // Ownership check: only mark your own notifications as read
+      const query = session.user.role === "admin"
+        ? { _id: notificationId, forAdmin: true }
+        : { _id: notificationId, forUserId: session.user.id };
+      await Notification.findOneAndUpdate(query, { read: true });
     }
 
     return NextResponse.json({ message: "Updated" });

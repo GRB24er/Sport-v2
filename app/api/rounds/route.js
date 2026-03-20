@@ -7,26 +7,17 @@ import Round from "@/models/Round";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 
-const GAME_NAMES = { "instant-virtual": "Instant Virtual", "egames": "eGames" };
-const PKG_LIMITS_DEF = { gold: 1, platinum: 2, diamond: 4 };
-
 import Settings from "@/models/Settings";
 import { isPackageExpired } from "@/lib/packageUtils";
+import { mToObj } from "@/lib/utils";
+import { GAME_NAMES, PKG_LIMITS_DEF } from "@/lib/constants";
 
 async function getPkgLimits() {
   try {
-    
     const s = await Settings.findOne({ key: "main" }).lean();
     if (!s) return PKG_LIMITS_DEF;
-    return { gold: s.goldMaxPreds || 1, platinum: s.platinumMaxPreds || 2, diamond: s.diamondMaxPreds || 4 };
+    return { gold: s.goldMaxPreds || 3, platinum: s.platinumMaxPreds || 3, diamond: s.diamondMaxPreds || 3 };
   } catch (e) { return PKG_LIMITS_DEF; }
-}
-
-function mToObj(m) {
-  if (!m) return {};
-  if (m instanceof Map) return Object.fromEntries(m);
-  if (typeof m.toJSON === "function") return m.toJSON();
-  return typeof m === "object" ? { ...m } : {};
 }
 
 // Auto-expire check
@@ -45,14 +36,25 @@ export async function POST(req) {
     if (!session || session.user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDB();
-    const { gameId, matches, adminNote, goLive, expiresInMinutes, sportyBetLink } = await req.json();
+    const { gameId, matches, adminNote, goLive, expiresInMinutes, betLink, isFree } = await req.json();
 
     if (!gameId || !GAME_NAMES[gameId]) return NextResponse.json({ error: "Invalid game" }, { status: 400 });
-    if (!matches || matches.length < 1 || matches.length > 3) return NextResponse.json({ error: "1-3 matches required" }, { status: 400 });
+    if (!matches || matches.length < 1 || matches.length > 10) return NextResponse.json({ error: "1-10 matches required" }, { status: 400 });
+    if (expiresInMinutes !== undefined && (expiresInMinutes < 5 || expiresInMinutes > 10080)) {
+      return NextResponse.json({ error: "Expiry must be 5 min to 7 days (10080 min)" }, { status: 400 });
+    }
 
     for (const m of matches) {
-      if (!m.homeTeam || !m.awayTeam || !m.picks?.length) {
-        return NextResponse.json({ error: `All matches need teams and at least 1 pick` }, { status: 400 });
+      if (!m.homeTeam?.trim() || !m.awayTeam?.trim() || !m.picks?.length) {
+        return NextResponse.json({ error: "All matches need teams and at least 1 pick" }, { status: 400 });
+      }
+      if (m.homeTeam.length > 100 || m.awayTeam.length > 100) {
+        return NextResponse.json({ error: "Team names too long" }, { status: 400 });
+      }
+      for (const p of m.picks) {
+        if (p.odd !== undefined && (isNaN(p.odd) || p.odd < 1 || p.odd > 1000)) {
+          return NextResponse.json({ error: "Odds must be between 1.00 and 1000.00" }, { status: 400 });
+        }
       }
     }
 
@@ -77,7 +79,8 @@ export async function POST(req) {
       })),
       totalOdd,
       adminNote: adminNote || "",
-      sportyBetLink: sportyBetLink || "",
+      betLink: betLink || "",
+      isFree: !!isFree,
       status: goLive ? "live" : "draft",
       publishedAt: goLive ? new Date() : null,
       expiresAt,
@@ -127,41 +130,63 @@ export async function GET(req) {
       return NextResponse.json({ rounds });
     }
 
-    // User — only live rounds for subscribed games
+    // User — live rounds for subscribed games + free rounds for all approved users
     const user = await User.findById(session.user.id).select("gamePackages status").lean();
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const gp = mToObj(user.gamePackages);
-    // Filter out expired packages
     const subscribedGames = Object.keys(gp).filter(g => !isPackageExpired(gp[g]));
 
-    if (subscribedGames.length === 0) {
-      return NextResponse.json({ rounds: [], subscribed: false });
+    // Determine user's package tier(s) for AI-generated round filtering
+    const userTiers = [];
+    for (const [g, pkg] of Object.entries(gp)) {
+      if (!isPackageExpired(pkg) && pkg.package) userTiers.push(pkg.package);
     }
 
-    const query = { status: "live" };
+    // Build query: subscribed game rounds OR free rounds
+    const conditions = [];
+
+    // Free rounds — available to ALL approved users
     if (gameId) {
-      if (!subscribedGames.includes(gameId)) {
-        return NextResponse.json({ rounds: [], subscribed: false });
-      }
-      query.gameId = gameId;
+      conditions.push({ status: "live", isFree: true, gameId });
     } else {
-      query.gameId = { $in: subscribedGames };
+      conditions.push({ status: "live", isFree: true });
     }
 
-    const rounds = await Round.find(query).sort({ createdAt: -1 }).lean();
+    // Subscribed game rounds (non-free)
+    if (subscribedGames.length > 0) {
+      const subQuery = { status: "live", isFree: { $ne: true } };
+      if (gameId) {
+        if (subscribedGames.includes(gameId)) subQuery.gameId = gameId;
+        else subQuery.gameId = "__none__"; // no match
+      } else {
+        subQuery.gameId = { $in: subscribedGames };
+      }
+      // AI tier filter
+      if (userTiers.length > 0) {
+        subQuery.$or = [
+          { aiGenerated: { $ne: true } },
+          { aiGenerated: true, aiPackageTier: { $in: userTiers } },
+        ];
+      } else {
+        subQuery.aiGenerated = { $ne: true };
+      }
+      conditions.push(subQuery);
+    }
+
+    const rounds = await Round.find({ $or: conditions }).sort({ createdAt: -1 }).lean();
     const userId = user._id.toString();
 
     const mapped = rounds.map(r => ({
       ...r,
       claimed: (r.claimedBy || []).includes(userId),
-      // Hide match picks if not claimed
-      matches: (r.claimedBy || []).includes(userId)
+      // Hide match picks if not claimed (free rounds always show picks)
+      matches: (r.claimedBy || []).includes(userId) || r.isFree
         ? r.matches
         : r.matches.map(m => ({ homeTeam: m.homeTeam, awayTeam: m.awayTeam, matchTime: m.matchTime, picks: [] })),
     }));
 
-    return NextResponse.json({ rounds: mapped, subscribed: true });
+    return NextResponse.json({ rounds: mapped, subscribed: subscribedGames.length > 0 });
   } catch (error) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
@@ -204,6 +229,15 @@ export async function PATCH(req) {
         return NextResponse.json({ message: "Round closed" });
       }
 
+      if (action === "result") {
+        const { result } = body;
+        if (!["won", "lost", "partial", "pending"].includes(result)) {
+          return NextResponse.json({ error: "Invalid result. Use: won, lost, partial, pending" }, { status: 400 });
+        }
+        await Round.findByIdAndUpdate(roundId, { result, resultNote: body.resultNote || "" });
+        return NextResponse.json({ message: `Round marked as ${result}` });
+      }
+
       if (action === "delete") {
         await Round.findByIdAndDelete(roundId);
         return NextResponse.json({ message: "Deleted" });
@@ -227,6 +261,18 @@ export async function PATCH(req) {
       return NextResponse.json({ error: "Already claimed" }, { status: 400 });
     }
 
+    // Free rounds — skip credit checks
+    if (round.isFree) {
+      const claimResult = await Round.findOneAndUpdate(
+        { _id: round._id, claimedBy: { $ne: userId } },
+        { $addToSet: { claimedBy: userId } },
+        { new: true }
+      );
+      if (!claimResult) return NextResponse.json({ error: "Already claimed" }, { status: 400 });
+      const fullRound = await Round.findById(roundId).lean();
+      return NextResponse.json({ message: "Unlocked!", round: fullRound, isFree: true });
+    }
+
     const gameId = round.gameId;
     const PKG_LIMITS = await getPkgLimits();
     const gp = mToObj(user.gamePackages);
@@ -234,9 +280,12 @@ export async function PATCH(req) {
 
     if (!gamePkg) return NextResponse.json({ error: "No package for this game" }, { status: 403 });
 
-    // Check time-based expiry
+    // Check time-based expiry (atomic: unset only if still matching)
     if (isPackageExpired(gamePkg)) {
-      await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gameId}`]: "" } });
+      await User.findOneAndUpdate(
+        { _id: user._id, [`gamePackages.${gameId}.expiresAt`]: gamePkg.expiresAt },
+        { $unset: { [`gamePackages.${gameId}`]: "" } }
+      );
       return NextResponse.json({ error: "EXPIRED", message: "Package expired. Subscribe again." }, { status: 403 });
     }
 
@@ -244,7 +293,10 @@ export async function PATCH(req) {
     const used = gamePkg.predictionsUsed || 0;
 
     if (used >= maxPreds) {
-      await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gameId}`]: "" } });
+      await User.findOneAndUpdate(
+        { _id: user._id, [`gamePackages.${gameId}.predictionsUsed`]: used },
+        { $unset: { [`gamePackages.${gameId}`]: "" } }
+      );
       return NextResponse.json({ error: "EXHAUSTED", message: "All credits used. Subscribe again." }, { status: 429 });
     }
 
@@ -261,15 +313,14 @@ export async function PATCH(req) {
     const newUsed = used + 1;
     const exhausted = newUsed >= maxPreds;
 
-    // ATOMIC: Increment predictionsUsed and check limit atomically
-    if (exhausted) {
-      await User.updateOne({ _id: user._id }, { $unset: { [`gamePackages.${gameId}`]: "" } });
-    } else {
-      await User.updateOne(
-        { _id: user._id, [`gamePackages.${gameId}.predictionsUsed`]: used },
-        { $set: { [`gamePackages.${gameId}.predictionsUsed`]: newUsed } }
-      );
-    }
+    // ATOMIC: Increment predictionsUsed — only if value hasn't changed since read
+    const creditUpdate = exhausted
+      ? { $unset: { [`gamePackages.${gameId}`]: "" } }
+      : { $set: { [`gamePackages.${gameId}.predictionsUsed`]: newUsed } };
+    await User.findOneAndUpdate(
+      { _id: user._id, [`gamePackages.${gameId}.predictionsUsed`]: used },
+      creditUpdate
+    );
 
     const gameName = GAME_NAMES[gameId] || gameId;
     await Notification.create({
