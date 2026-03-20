@@ -589,13 +589,16 @@ export default function Dashboard() {
                 <span style={{fontFamily:"'Bebas Neue'",fontSize:22,color:"#D4AF37",letterSpacing:1}}>{r.totalOdd?.toFixed(2)}x</span>
               </div>
               {r.matches?.map((m, mi) => (
-                <div key={mi} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:mi<r.matches.length-1?"1px solid #1E2028":"none"}}>
+                <div key={mi} style={{padding:"8px 0",borderBottom:mi<r.matches.length-1?"1px solid #1E2028":"none"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{fontSize:13,color:"#ccc"}}>{m.homeTeam} vs {m.awayTeam}</span>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
                     {m.picks?.map((p, pi) => (
                       <span key={pi} style={{background:"#0B963520",color:"#0B9635",padding:"2px 8px",borderRadius:6,fontSize:11,fontWeight:700}}>{p.pick} ({p.odd}x)</span>
                     ))}
                   </div>
+                  </div>
+                  {m.matchTime&&<div style={{fontSize:10,color:"#555",marginTop:2}}>{"\u{1F4C5}"} {(()=>{try{const dt=new Date(m.matchTime);if(isNaN(dt))return m.matchTime;return dt.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+" • "+dt.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});}catch(e){return m.matchTime;}})()}</div>}
                 </div>
               ))}
               {r.adminNote && <div style={{marginTop:8,fontSize:12,color:"#D4AF37",fontStyle:"italic"}}>{r.adminNote}</div>}

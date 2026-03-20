@@ -797,7 +797,7 @@ export default function AdminDash() {
                 </div>
                 {r.matches?.map((m,mi)=>(
                   <div key={mi} style={{background:"#0B0D10",border:"1px solid #151820",borderRadius:10,padding:10,marginBottom:4}}>
-                    <div style={{fontWeight:700,fontSize:13}}>{m.homeTeam} vs {m.awayTeam}{m.matchTime?` • ${m.matchTime}`:""}</div>
+                    <div style={{fontWeight:700,fontSize:13}}>{m.homeTeam} vs {m.awayTeam}</div>{m.matchTime&&<div style={{fontSize:10,color:"#555",marginTop:1}}>{"\u{1F4C5}"} {(()=>{try{const dt=new Date(m.matchTime);if(isNaN(dt))return m.matchTime;return dt.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+" • "+dt.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});}catch(e){return m.matchTime;}})()}</div>}
                     <div style={{display:"flex",gap:4,marginTop:4,flexWrap:"wrap"}}>{m.picks?.map((pk,pi)=>(<span key={pi} style={{padding:"2px 8px",background:"#8B5CF610",border:"1px solid #8B5CF620",borderRadius:4,fontSize:10,color:"#8B5CF6",fontWeight:600}}>{pk.market}: {pk.pick} ({pk.odd}x)</span>))}</div>
                   </div>
                 ))}
@@ -1241,7 +1241,7 @@ export default function AdminDash() {
                     <input value={m.away} onChange={e=>updMatch(i,"away",e.target.value)} placeholder="Away Team" style={{padding:"10px",background:"#12141A",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:12,fontFamily:"'DM Sans'",outline:"none"}} />
                   </div>
 
-                  <input value={m.time} onChange={e=>updMatch(i,"time",e.target.value)} placeholder="Time (e.g. 14:30)" style={{width:"100%",padding:"8px 10px",background:"#12141A",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:11,fontFamily:"'DM Sans'",outline:"none",marginBottom:8}} />
+                  <input type="datetime-local" value={m.time} onChange={e=>updMatch(i,"time",e.target.value)} style={{width:"100%",padding:"8px 10px",background:"#12141A",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:11,fontFamily:"'DM Sans'",outline:"none",marginBottom:8,colorScheme:"dark"}} />
 
                   <select value={m.mkt} onChange={e=>updMatch(i,"mkt",e.target.value)} style={{width:"100%",padding:"9px",background:"#12141A",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:11,fontFamily:"'DM Sans'",outline:"none",marginBottom:8,cursor:"pointer"}}>
                     {MKT_KEYS.map(k=><option key={k} value={k}>{k}</option>)}

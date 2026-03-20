@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+const fmtMatchDate = (d) => { if(!d) return ""; try { const dt = new Date(d); if(isNaN(dt)) return d; return dt.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}) + " • " + dt.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); } catch(e){ return d; } };
 const PKGS_DEF = { gold:{name:"Gold",max:3,icon:"\u{1F947}",color:"#D4AF37"}, platinum:{name:"Platinum",max:3,icon:"\u{1F948}",color:"#94A7BD"}, diamond:{name:"Diamond",max:3,icon:"\u{1F48E}",color:"#7DD3E8"} };
 const GMETA = {
   "football":{name:"Football Predictions",icon:"\u26BD",color:"#0B9635"},
@@ -163,7 +164,7 @@ export default function PredictPage() {
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                         <div>
                           <div style={{fontWeight:700,fontSize:14}}>{m.homeTeam} vs {m.awayTeam}</div>
-                          {m.matchTime&&<div style={{fontSize:11,color:"#444",marginTop:2}}>{m.matchTime}</div>}
+                          {m.matchTime&&<div style={{fontSize:11,color:"#444",marginTop:2}}>{"\u{1F4C5}"} {fmtMatchDate(m.matchTime)}</div>}
                         </div>
                         <span style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:4,background:"#0B963512",color:"#0B9635"}}>MATCH {mi+1}</span>
                       </div>
@@ -290,7 +291,7 @@ export default function PredictPage() {
                                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                                     <div>
                                       <div style={{fontWeight:700,fontSize:14}}>{m.homeTeam} vs {m.awayTeam}</div>
-                                      {m.matchTime&&<div style={{fontSize:11,color:"#444",marginTop:2}}>{m.matchTime}</div>}
+                                      {m.matchTime&&<div style={{fontSize:11,color:"#444",marginTop:2}}>{"\u{1F4C5}"} {fmtMatchDate(m.matchTime)}</div>}
                                     </div>
                                     <span style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:4,background:gm.color+"12",color:gm.color}}>MATCH {mi+1}</span>
                                   </div>
