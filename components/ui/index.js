@@ -6,13 +6,15 @@ import { useState } from "react";
 // LOGO
 // ═══════════════════════════════════════════════════════
 export function Logo({ size = "md" }) {
-  const sizes = { sm: "text-lg", md: "text-xl", lg: "text-2xl" };
-  const box = { sm: "w-7 h-7 text-sm", md: "w-8 h-8 text-base", lg: "w-10 h-10 text-lg" };
+  const heights = { sm: 28, md: 36, lg: 48 };
+  const h = heights[size] || 36;
   return (
-    <div className="flex items-center gap-2.5">
-      <div className={`${box[size]} bg-brand-green rounded-md flex items-center justify-center font-black text-white -rotate-[5deg] font-display`}>B</div>
-      <span className={`${sizes[size]} font-extrabold tracking-[0.15em] font-display text-smoke`}>BET<span className="text-brand-green">GENIUS</span></span>
-    </div>
+    <img
+      src="/pego-logo.png"
+      alt="BetGenius AI"
+      height={h}
+      style={{ height: h, width: "auto", objectFit: "contain" }}
+    />
   );
 }
 
