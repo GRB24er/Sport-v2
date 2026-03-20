@@ -29,7 +29,8 @@ export default function AdminDash() {
   const [expanded,setExpanded] = useState(null);
   const [modal,setModal] = useState(false);
   const [userModal,setUserModal] = useState(null);
-  const [mf,setMf] = useState({gameId:"football",note:"",expire:60,bettingLink:"",matches:[{home:"",away:"",time:"",mkt:"1X2",pick:"",odd:""},{home:"",away:"",time:"",mkt:"Over/Under 2.5",pick:"",odd:""},{home:"",away:"",time:"",mkt:"BTTS",pick:"",odd:""}]});
+  const emptyMatch = (mkt="1X2") => ({home:"",away:"",time:"",mkt,pick:"",odd:""});
+  const [mf,setMf] = useState({gameId:"football",note:"",expire:60,bettingLink:"",matches:[emptyMatch("1X2"),emptyMatch("Over/Under 2.5"),emptyMatch("BTTS")]});
   const [sending,setSending] = useState(false);
   const [refData,setRefData] = useState({ usersWithCodes:[], allReferred:[], stats:{} });
   const [settings,setSettings] = useState(null);
@@ -296,7 +297,7 @@ export default function AdminDash() {
       isFree: !!mf.isFree,
     })});
     setSending(false); setModal(false);
-    setMf({gameId:"football",note:"",expire:60,bettingLink:"",isFree:false,matches:[{home:"",away:"",time:"",mkt:"1X2",pick:"",odd:""},{home:"",away:"",time:"",mkt:"Over/Under 2.5",pick:"",odd:""},{home:"",away:"",time:"",mkt:"BTTS",pick:"",odd:""}]});
+    setMf({gameId:"football",note:"",expire:60,bettingLink:"",isFree:false,matches:[emptyMatch("1X2"),emptyMatch("Over/Under 2.5"),emptyMatch("BTTS")]});
     load();
   };
 
@@ -1192,7 +1193,7 @@ export default function AdminDash() {
           <div style={{background:"#12141A",border:"1px solid #1E2028",borderRadius:20,padding:22,maxWidth:520,width:"100%",maxHeight:"90vh",overflowY:"auto",animation:"scaleIn .3s cubic-bezier(.16,1,.3,1)"}} onClick={e=>e.stopPropagation()}>
 
             <h2 style={{...val,fontSize:22,marginBottom:2}}>Create Round</h2>
-            <p style={{fontSize:12,color:"#444",marginBottom:14}}>3 matches → publish live → users unlock with 1 credit</p>
+            <p style={{fontSize:12,color:"#444",marginBottom:14}}>Up to 10 matches per slip → publish live → users unlock with 1 credit</p>
 
             {/* Game toggle */}
             <div style={{display:"flex",gap:6,marginBottom:10}}>
@@ -1208,13 +1209,23 @@ export default function AdminDash() {
               {mf.isFree && <span style={{fontSize:10,color:"#888",marginLeft:"auto"}}>Visible to all approved users — no credits needed</span>}
             </div>
 
-            {/* 3 Match slots */}
+            {/* Match slots (up to 10) */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#888",letterSpacing:1}}>{mf.matches.length} MATCH{mf.matches.length>1?"ES":""}</span>
+              <div style={{display:"flex",gap:6}}>
+                {mf.matches.length>1&&<button type="button" onClick={()=>setMf(f=>({...f,matches:f.matches.slice(0,-1)}))} style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",border:"1px solid #E3172530",background:"#E3172510",color:"#E31725"}}>− Remove</button>}
+                {mf.matches.length<10&&<button type="button" onClick={()=>{const defMkt=mf.gameId==="basketball"?"Moneyline":mf.gameId==="tennis"?"Match Winner":"1X2";setMf(f=>({...f,matches:[...f.matches,emptyMatch(defMkt)]}));}} style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",border:"1px solid #0B963530",background:"#0B963510",color:"#0B9635"}}>+ Add Match</button>}
+              </div>
+            </div>
             {mf.matches.map((m,i)=>{
               const gc = "#0B9635";
               const opts = MKTS[m.mkt] || MKTS["1X2"];
               return(
-                <div key={i} style={{background:"#0B0D10",border:"1px solid #1E2028",borderRadius:14,padding:14,marginBottom:10}}>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:gc,marginBottom:8}}>MATCH {i+1}</div>
+                <div key={i} style={{background:"#0B0D10",border:"1px solid #1E2028",borderRadius:14,padding:14,marginBottom:10,position:"relative"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:gc}}>MATCH {i+1}</div>
+                    {mf.matches.length>1&&<button type="button" onClick={()=>setMf(f=>({...f,matches:f.matches.filter((_,j)=>j!==i)}))} style={{padding:"2px 8px",borderRadius:6,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"'DM Sans'",border:"1px solid #E3172520",background:"transparent",color:"#E31725"}}>✕</button>}
+                  </div>
 
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
                     <input value={m.home} onChange={e=>updMatch(i,"home",e.target.value)} placeholder="Home Team" style={{padding:"10px",background:"#12141A",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:12,fontFamily:"'DM Sans'",outline:"none"}} />
