@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 const PKGS_DEF = { gold:{name:"Gold",max:3,icon:"\u{1F947}",color:"#D4AF37"}, platinum:{name:"Platinum",max:3,icon:"\u{1F948}",color:"#94A7BD"}, diamond:{name:"Diamond",max:3,icon:"\u{1F48E}",color:"#7DD3E8"} };
 const GMETA = {
   "football":{name:"Football Predictions",icon:"\u26BD",color:"#0B9635"},
-  // Legacy IDs for backward compat with existing DB records
   "virtual-football":{name:"Football Predictions",icon:"\u26BD",color:"#0B9635"},
   "egames":{name:"Football Predictions",icon:"\u26BD",color:"#0B9635"},
   "instant-virtual":{name:"Football Predictions",icon:"\u26BD",color:"#0B9635"},
+  "basketball":{name:"Basketball Predictions",icon:"\u{1F3C0}",color:"#E36414"},
+  "tennis":{name:"Tennis Predictions",icon:"\u{1F3BE}",color:"#D4AF37"},
 };
 
 export default function PredictPage() {
@@ -96,6 +97,11 @@ export default function PredictPage() {
   const validPkg = hasPkg && !isExpired;
   const canAccess = validPkg;
 
+  // Separate free rounds from paid rounds
+  const freeRounds = rounds.filter(r => r.isFree);
+  const paidRounds = rounds.filter(r => !r.isFree);
+  const hasFreeRounds = freeRounds.length > 0;
+
   return(
     <div className="pg">
       <style>{`
@@ -138,12 +144,54 @@ export default function PredictPage() {
 
       <main className="mn">
 
+        {/* FREE ROUNDS — always visible */}
+        {!loading&&hasFreeRounds&&(
+          <div className="asu" style={{marginBottom:20}}>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"#0B9635",marginBottom:10}}>{"\u{1F381}"} FREE BETS ({freeRounds.length})</div>
+            {freeRounds.map((r,i)=>(
+              <div key={r._id} className={`cd asu ad${Math.min(i+1,3)}`} style={{borderColor:"#0B963530"}}>
+                <div style={{padding:"16px 18px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span className="round-num" style={{background:"#0B963518",color:"#0B9635"}}>FREE</span>
+                      {r.result&&r.result!=="pending"&&<span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:4,background:r.result==="won"?"#0B963518":"#E3172518",color:r.result==="won"?"#0B9635":"#E31725"}}>{r.result==="won"?"\u2705 WON":"\u274C LOST"}</span>}
+                    </div>
+                    <span className="bv" style={{fontSize:22,color:"#D4AF37"}}>{r.totalOdd?.toFixed(2)}x</span>
+                  </div>
+                  {r.matches?.map((m,mi)=>(
+                    <div key={mi} className="match">
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                        <div>
+                          <div style={{fontWeight:700,fontSize:14}}>{m.homeTeam} vs {m.awayTeam}</div>
+                          {m.matchTime&&<div style={{fontSize:11,color:"#444",marginTop:2}}>{m.matchTime}</div>}
+                        </div>
+                        <span style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:4,background:"#0B963512",color:"#0B9635"}}>MATCH {mi+1}</span>
+                      </div>
+                      {m.picks?.map((pk,pi)=>(
+                        <div key={pi} className="pick">
+                          <div>
+                            <div style={{fontSize:10,color:"#444",fontWeight:700}}>{pk.market}</div>
+                            <div style={{fontSize:15,fontWeight:800,marginTop:2}}>{pk.pick}</div>
+                          </div>
+                          <span style={{color:"#0B9635",fontWeight:700,fontSize:14}}>{pk.odd}x</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  {r.adminNote&&<div style={{marginTop:8,padding:"8px 12px",background:"#D4AF3708",border:"1px solid #D4AF3718",borderRadius:8,fontSize:11,color:"#D4AF37"}}>{"\u{1F4A1}"} {r.adminNote}</div>}
+                  {r.betLink&&<a href={r.betLink} target="_blank" rel="noopener noreferrer" style={{display:"block",marginTop:8,padding:12,background:"#0B963510",border:"1px solid #0B963520",borderRadius:10,textAlign:"center",textDecoration:"none",fontSize:13,fontWeight:700,color:"#0B9635"}}>Place Bet {"\u2192"}</a>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* NO PACKAGE */}
         {!canAccess&&!loading&&(
           <div className="asu empty">
             <div style={{fontSize:56,marginBottom:12}}>{"\u{1F512}"}</div>
             <div className="bv" style={{fontSize:28,color:"#F0F0F2",marginBottom:8}}>{isExpired ? "Package Expired" : "No Active Package"}</div>
-            <p style={{fontSize:14,marginBottom:24}}>{isExpired ? "Your package has expired. Subscribe again to continue." : "Subscribe to get football predictions."}</p>
+            <p style={{fontSize:14,marginBottom:24}}>{isExpired ? "Your package has expired. Subscribe again to continue." : `Subscribe to get ${gm.name.toLowerCase()}.`}</p>
             <button className="btn" onClick={()=>router.push("/dashboard")} style={{background:"#0B9635",color:"#fff",maxWidth:260,margin:"0 auto"}}>{"\u2190"} Back to Dashboard</button>
           </div>
         )}

@@ -63,7 +63,7 @@ export async function GET() {
     ] = await Promise.all([
       // 1. Users — only fields the dashboard needs (skip password, avatar, etc.)
       User.find({})
-        .select("name phone email status amountPaid referredBy referralCode gamePackages pendingGamePackages bettingId referenceNumber paymentProvider createdAt approvedAt")
+        .select("name phone email status amountPaid referredBy referralCode gamePackages pendingGamePackages bettingId referenceNumber paymentProvider paymentProofUrl createdAt approvedAt")
         .sort({ createdAt: -1 }).limit(200).lean(),
       // 2. Uploads — EXCLUDE imageData (base64 screenshots are 500KB-2MB each!)
       Upload.find({})
@@ -91,7 +91,7 @@ export async function GET() {
       SupportThread.find().sort({ lastDate: -1 }).lean(),
       // 10. Package requests — users with pending packages
       User.find({ "pendingGamePackages": { $exists: true, $ne: {} } })
-        .select("name phone email bettingId pendingGamePackages").lean(),
+        .select("name phone email bettingId pendingGamePackages paymentProofUrl").lean(),
     ]);
 
     // --- Process referral stats ---
@@ -146,6 +146,7 @@ export async function GET() {
             referenceNumber: r.referenceNumber, paymentProvider: r.paymentProvider,
             providerName: PROV_NAMES[r.paymentProvider] || r.paymentProvider,
             senderName: r.senderName || "", date: r.date,
+            paymentProofUrl: r.paymentProofUrl || u.paymentProofUrl || "",
           });
         }
       }
