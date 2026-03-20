@@ -398,7 +398,7 @@ export default function AdminDash() {
       <header className="ahdr" style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 24px",borderBottom:"1px solid #151820",background:"#0B0D10F0",backdropFilter:"blur(20px)",position:"sticky",top:0,zIndex:90}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <button className="aham" style={{display:"none",background:"none",border:"none",color:"#F0F0F2",fontSize:22,cursor:"pointer"}} onClick={()=>setSidebar(!sidebar)}>☰</button>
-          <a href="/"><img src="/images/logo.png" alt="BG" style={{height:LOGO,width:"auto",objectFit:"contain"}} /></a>
+          <a href="/"><img src="/pego-logo.png" alt="BG" style={{height:LOGO,width:"auto",objectFit:"contain"}} /></a>
           <span style={{fontSize:10,fontWeight:700,letterSpacing:1.5,padding:"4px 12px",borderRadius:8,background:"#0B963518",color:"#0B9635"}}>ADMIN</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>

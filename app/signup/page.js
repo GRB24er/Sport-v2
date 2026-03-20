@@ -227,7 +227,7 @@ export default function SignupPage() {
       <div className="su-cnt">
         <div className="su-card">
           <div className="su-inner">
-            <div className="su-logo"><a href="/"><img src="/images/logo.png" alt="BetGenius AI" style={{height:LOGO_H,width:"auto",objectFit:"contain"}} /></a></div>
+            <div className="su-logo"><a href="/"><img src="/pego-logo.png" alt="BetGenius AI" style={{height:LOGO_H,width:"auto",objectFit:"contain"}} /></a></div>
             <div className="su-prog">{[1,2,3,4].map(i=><div key={i} className={`su-bar ${step>=i?"on":""}`} />)}</div>
             <div className="su-step"><span>STEP {step} OF 4</span></div>
 
@@ -401,7 +401,7 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <div className="su-pgfoot"><img src="/images/logo.png" alt="BetGenius AI" style={{height:28,width:"auto",objectFit:"contain",opacity:.3,marginBottom:6,display:"block",margin:"0 auto 6px"}} /><div>© 2026 BetGenius AI. 18+ Only. Gamble Responsibly.</div></div>
+      <div className="su-pgfoot"><img src="/pego-logo.png" alt="BetGenius AI" style={{height:28,width:"auto",objectFit:"contain",opacity:.3,marginBottom:6,display:"block",margin:"0 auto 6px"}} /><div>© 2026 BetGenius AI. 18+ Only. Gamble Responsibly.</div></div>
     </div>
   );
 }

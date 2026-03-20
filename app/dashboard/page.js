@@ -27,7 +27,7 @@ const DEF_CRYPTO_PROVS = [
 ];
 
 const GAMES = [
-  { id:"football", name:"Football Predictions", sub:"EPL \u2022 La Liga \u2022 Serie A \u2022 Bundesliga", icon:"\u26BD", logo:"/images/logoo.png", color:"#0B9635", bg:"linear-gradient(135deg,#0B9635,#054d18)", desc:"Expert predictions for top European leagues. Get winning odds from our verified sources.", tags:["EPL","La Liga","Serie A","Bundesliga"], live:true, badge:"\u{1F525} LIVE" },
+  { id:"football", name:"Football Predictions", sub:"EPL \u2022 La Liga \u2022 Serie A \u2022 Bundesliga", icon:"\u26BD", logo:"/pego-logo.png", color:"#0B9635", bg:"linear-gradient(135deg,#0B9635,#054d18)", desc:"Expert predictions for top European leagues. Get winning odds from our verified sources.", tags:["EPL","La Liga","Serie A","Bundesliga"], live:true, badge:"\u{1F525} LIVE" },
   { id:"basketball", name:"Basketball", sub:"NBA \u2022 Euroleague", icon:"\u{1F3C0}", color:"#E36414", bg:"linear-gradient(135deg,#E36414,#8B3A07)", desc:"Expert basketball predictions for NBA and Euroleague. Moneyline, spreads, and totals.", tags:["NBA","Euroleague"], live:true, badge:"\u{1F3C0} LIVE" },
   { id:"tennis", name:"Tennis", sub:"ATP \u2022 WTA", icon:"\u{1F3BE}", color:"#D4AF37", bg:"linear-gradient(135deg,#D4AF37,#8B7419)", desc:"Professional tennis predictions for ATP and WTA events. Match winners, sets, and handicaps.", tags:["ATP","WTA"], live:true, badge:"\u{1F3BE} LIVE" },
 ];
@@ -386,7 +386,7 @@ export default function Dashboard() {
       <div className="vbg" />
 
       <header className="hdr">
-        <a href="/"><img src="/images/logo.png" alt="BG" style={{height:46,width:"auto",objectFit:"contain"}} /></a>
+        <a href="/"><img src="/pego-logo.png" alt="BG" style={{height:46,width:"auto",objectFit:"contain"}} /></a>
         <div className="hr" style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{position:"relative",cursor:"pointer"}} onClick={()=>{setNotifOpen(!notifOpen);setProfileOpen(false);}}>
             <span style={{fontSize:20}}>{"\u{1F514}"}</span>

@@ -127,7 +127,7 @@ export default function PredictPage() {
       <header className="hdr">
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>router.push("/dashboard")}>
           <span style={{fontSize:18,color:"#888"}}>{"\u2190"}</span>
-          <img src="/images/logo.png" alt="BG" style={{height:40,width:"auto"}}/>
+          <img src="/pego-logo.png" alt="BG" style={{height:40,width:"auto"}}/>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:18}}>{gm.icon}</span>

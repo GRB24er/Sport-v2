@@ -10,7 +10,7 @@ export default function PrivacyPage() {
       <header style={{display:"flex",alignItems:"center",gap:10,padding:"14px 20px",borderBottom:"1px solid #151820",background:"#0B0D10F0",backdropFilter:"blur(20px)",position:"sticky",top:0,zIndex:90}}>
         <div style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}} onClick={() => router.back()}>
           <span style={{fontSize:18,color:"#888"}}>{"\u2190"}</span>
-          <img src="/images/logo.png" alt="BG" style={{height:40,width:"auto"}} />
+          <img src="/pego-logo.png" alt="BG" style={{height:40,width:"auto"}} />
         </div>
         <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:2,marginLeft:"auto"}}>Privacy Policy</span>
       </header>

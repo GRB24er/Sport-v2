@@ -9,8 +9,8 @@ export const metadata = {
     "Expert football predictions for EPL, La Liga, Serie A & Bundesliga. Gold, Platinum & Diamond packages with verified high-odds picks delivered in rounds.",
   keywords: "football predictions, betting tips, EPL predictions, La Liga tips, Serie A predictions, Bundesliga tips, sports betting, high odds",
   icons: {
-    icon: "/images/logo.png",
-    apple: "/images/logo.png",
+    icon: "/pego-logo.png",
+    apple: "/pego-logo.png",
   },
   openGraph: {
     title: "BetGenius AI — Expert Football Predictions",
@@ -18,13 +18,13 @@ export const metadata = {
     type: "website",
     siteName: "BetGenius AI",
     url: "https://betgenius.ai",
-    images: [{ url: "/images/logo.png", width: 512, height: 512, alt: "BetGenius AI" }],
+    images: [{ url: "/pego-logo.png", width: 512, height: 512, alt: "BetGenius AI" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "BetGenius AI — Expert Football Predictions",
     description: "Get winning predictions for EPL, La Liga, Serie A & Bundesliga. Verified results, expert analysis.",
-    images: ["/images/logo.png"],
+    images: ["/pego-logo.png"],
   },
   robots: { index: true, follow: true },
 };
