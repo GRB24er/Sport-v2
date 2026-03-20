@@ -40,7 +40,7 @@ export default function App() {
         .btn-gold:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,175,55,0.3)}
 
         /* ── Watermark ── */
-        .vb-watermark{position:fixed;inset:0;z-index:0;background-image:url(/backdrop.png);background-size:380px auto;background-repeat:repeat;background-position:center top;opacity:0.03;pointer-events:none}
+        .vb-watermark{position:fixed;inset:0;z-index:0;background-image:radial-gradient(circle,#0B9635 1px,transparent 1px);background-size:30px 30px;opacity:0.04;pointer-events:none}
         .vb-watermark-fade{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#0B0D10 0%,transparent 20%,transparent 80%,#0B0D10 100%);pointer-events:none}
 
         /* ── Header ── */

@@ -27,7 +27,7 @@ export default function LoginPage() {
   return (
     <div style={{minHeight:"100vh",background:"#0B0D10",color:"#F0F0F2",fontFamily:"'DM Sans',sans-serif",display:"flex",flexDirection:"column"}}>
       <style>{`*{margin:0;padding:0;box-sizing:border-box}body{background:#0B0D10}@media(max-width:480px){.lcard{padding:28px 22px!important}.ltitle{font-size:28px!important}.lcontent{padding:24px 16px!important}}`}</style>
-      <div style={{position:"fixed",inset:0,zIndex:0,backgroundImage:"url(/backdrop.png)",backgroundSize:"380px auto",backgroundRepeat:"repeat",opacity:0.03,pointerEvents:"none"}} />
+      <div style={{position:"fixed",inset:0,zIndex:0,backgroundImage:"radial-gradient(circle,#0B9635 1px,transparent 1px)",backgroundSize:"30px 30px",opacity:0.04,pointerEvents:"none"}} />
       <div style={{position:"fixed",inset:0,zIndex:0,background:"linear-gradient(180deg,#0B0D10 0%,transparent 30%,transparent 70%,#0B0D10 100%)",pointerEvents:"none"}} />
       <div className="lcontent" style={{position:"relative",zIndex:1,flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 20px"}}>
         <div className="lcard" style={{width:"100%",maxWidth:420,background:"#12141A",border:"1px solid #1E2028",borderRadius:20,padding:"40px 36px",position:"relative",overflow:"hidden"}}>

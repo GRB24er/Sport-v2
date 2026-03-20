@@ -141,7 +141,7 @@ export default function SignupPage() {
 .su-bg-orb:nth-child(2){width:400px;height:400px;background:#0B9635;bottom:-15%;right:-10%;animation-delay:-7s}
 .su-bg-orb:nth-child(3){width:300px;height:300px;background:#D4AF37;top:50%;left:50%;animation-delay:-14s}
 @keyframes orb{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.1)}66%{transform:translate(-30px,20px) scale(.9)}}
-.su-grid{position:fixed;inset:0;z-index:0;background-image:url(/backdrop.png);background-size:380px auto;background-repeat:repeat;opacity:.03}
+.su-grid{position:fixed;inset:0;z-index:0;background-image:radial-gradient(circle,#0B9635 1px,transparent 1px);background-size:30px 30px;opacity:.04}
 .su-cnt{position:relative;z-index:1;flex:1;display:flex;align-items:center;justify-content:center;padding:32px 20px}
 .su-card{width:100%;max-width:480px;position:relative}
 .su-inner{background:rgba(18,20,26,.85);backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.06);border-radius:28px;padding:40px 32px;position:relative;overflow:hidden}

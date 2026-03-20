@@ -376,7 +376,7 @@ export default function AdminDash() {
 @keyframes spin{to{transform:rotate(360deg)}}
 .as{animation:slideIn .5s cubic-bezier(.16,1,.3,1) both}
 .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}.d6{animation-delay:.3s}
-.abg{position:fixed;inset:0;z-index:0;background-image:url(/backdrop.png);background-size:380px auto;background-repeat:repeat;opacity:.02;pointer-events:none}
+.abg{position:fixed;inset:0;z-index:0;background-image:radial-gradient(circle,#0B9635 1px,transparent 1px);background-size:30px 30px;opacity:.03;pointer-events:none}
 @media(max-width:768px){
   .aside{position:fixed!important;left:-260px;top:53px;bottom:0;z-index:85;transition:left .3s!important;width:240px!important}
   .aside.open{left:0!important}
