@@ -259,6 +259,8 @@ export default function AdminDash() {
     "HT Result":["1 (Home)","X (Draw)","2 (Away)"],
     "HT/FT":["1/1","1/X","1/2","X/1","X/X","X/2","2/1","2/X","2/2"],
     "Total Goals":["0-1","2-3","4-5","6+"],
+    "Corners O/U":["Over 8.5","Under 8.5","Over 9.5","Under 9.5","Over 10.5","Under 10.5","Over 11.5","Under 11.5"],
+    "Bookings O/U":["Over 2.5 Cards","Under 2.5 Cards","Over 3.5 Cards","Under 3.5 Cards","Over 4.5 Cards","Under 4.5 Cards","Over 5.5 Cards","Under 5.5 Cards"],
   };
   const BASKETBALL_MKTS = {
     "Moneyline":["Home Win","Away Win"],
@@ -687,7 +689,7 @@ export default function AdminDash() {
                                 <input id={`a${mi}-${up._id}`} placeholder="Away" style={{padding:"8px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:6,color:"#F0F0F2",fontSize:11,fontFamily:"'DM Sans'",outline:"none"}}/>
                               </div>
                               <select id={`mk${mi}-${up._id}`} style={{width:"100%",padding:"7px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:6,color:"#F0F0F2",fontSize:10,fontFamily:"'DM Sans'",outline:"none",marginBottom:4,cursor:"pointer"}}>
-                                <option value="1X2">1X2</option><option value="Over/Under 1.5">O/U 1.5</option><option value="Over/Under 2.5">O/U 2.5</option><option value="Over/Under 3.5">O/U 3.5</option><option value="BTTS">BTTS</option><option value="Double Chance">Double Chance</option><option value="Correct Score">Correct Score</option><option value="HT Result">HT Result</option><option value="Total Goals">Total Goals</option>
+                                <option value="1X2">1X2</option><option value="Over/Under 1.5">O/U 1.5</option><option value="Over/Under 2.5">O/U 2.5</option><option value="Over/Under 3.5">O/U 3.5</option><option value="BTTS">BTTS</option><option value="Double Chance">Double Chance</option><option value="Correct Score">Correct Score</option><option value="HT Result">HT Result</option><option value="Total Goals">Total Goals</option><option value="Corners O/U">Corners</option><option value="Bookings O/U">Bookings</option>
                               </select>
                               <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:4}}>
                                 <input id={`pk${mi}-${up._id}`} placeholder="Pick" style={{padding:"8px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:6,color:"#F0F0F2",fontSize:11,fontFamily:"'DM Sans'",outline:"none"}}/>
