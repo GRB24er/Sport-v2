@@ -288,19 +288,26 @@ export default function AdminDash() {
 
   const sendPred = async () => {
     const valid = mf.matches.filter(m => m.home && m.away && m.pick);
-    if (valid.length === 0) return;
+    if (valid.length === 0) { alert("Add at least 1 match with teams and a pick"); return; }
     setSending(true);
-    await fetch("/api/rounds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-      gameId: mf.gameId,
-      matches: valid.map(m => ({ homeTeam: m.home, awayTeam: m.away, matchTime: m.time, picks: [{ market: m.mkt, pick: m.pick, odd: parseFloat(m.odd) || 1.5 }] })),
-      adminNote: mf.note, bettingLink: mf.bettingLink,
-      goLive: true,
-      expiresInMinutes: parseInt(mf.expire) || 60,
-      isFree: !!mf.isFree,
-    })});
-    setSending(false); setModal(false);
-    setMf({gameId:"football",note:"",expire:60,bettingLink:"",isFree:false,matches:[emptyMatch("1X2"),emptyMatch("Over/Under 2.5"),emptyMatch("BTTS")]});
-    load();
+    try {
+      const res = await fetch("/api/rounds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        gameId: mf.gameId,
+        matches: valid.map(m => ({ homeTeam: m.home, awayTeam: m.away, matchTime: m.time, picks: [{ market: m.mkt, pick: m.pick, odd: parseFloat(m.odd) || 1.5 }] })),
+        adminNote: mf.note, bettingLink: mf.bettingLink,
+        goLive: true,
+        expiresInMinutes: parseInt(mf.expire) || 60,
+        isFree: !!mf.isFree,
+      })});
+      const data = await res.json();
+      if (!res.ok) { alert("Error: " + (data.error || "Failed to publish")); setSending(false); return; }
+      setModal(false);
+      setMf({gameId:"football",note:"",expire:60,bettingLink:"",isFree:false,matches:[emptyMatch("1X2"),emptyMatch("Over/Under 2.5"),emptyMatch("BTTS")]});
+      load();
+    } catch (e) {
+      alert("Network error — check your connection");
+    }
+    setSending(false);
   };
 
   const saveSettings = async () => {
