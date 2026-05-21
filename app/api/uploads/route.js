@@ -83,8 +83,8 @@ export async function POST(req) {
       forAdmin: true, relatedUserId: user._id,
     });
 
-    // Auto-analyze with Gemini AI if API key is configured
-    if (process.env.GEMINI_API_KEY) {
+    // Auto-analyze with PayPerQ AI if API key is configured
+    if (process.env.PPQ_API_KEY) {
       try {
         const aiUrl = new URL("/api/predictions/ai", req.url);
         const aiRes = await fetch(aiUrl.toString(), {
