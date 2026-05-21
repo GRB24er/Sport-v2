@@ -145,6 +145,17 @@ export default function PredictPage() {
 
       <main className="mn">
 
+        {/* AI / RESPONSIBLE-BETTING DISCLAIMER */}
+        <div style={{background:"linear-gradient(135deg,#12141A,#D4AF3708)",border:"1px solid #D4AF3725",borderRadius:12,padding:"12px 14px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:10}}>
+          <span style={{fontSize:18,lineHeight:1,marginTop:1,flexShrink:0}}>⚠️</span>
+          <div style={{fontSize:11.5,color:"#aaa",lineHeight:1.55}}>
+            <strong style={{color:"#D4AF37"}}>Predictions are analysis, not guarantees.</strong>{" "}
+            Sports betting carries real financial risk. Never wager more than you can afford to lose.{" "}
+            <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Need help?</a>
+            {" · 18+ only"}
+          </div>
+        </div>
+
         {/* FREE ROUNDS — always visible */}
         {!loading&&hasFreeRounds&&(
           <div className="asu" style={{marginBottom:20}}>

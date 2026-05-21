@@ -6,21 +6,36 @@ import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 import Settings from "@/models/Settings";
+import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
 const SIGNUP_FEE_DEF = 20;
 
 // POST — Register
 export async function POST(req) {
   try {
+    // Rate-limit signups by IP — 5 per 10 min is plenty for legit use,
+    // tight enough to slow down scripted account creation.
+    const ip = getClientIp(req);
+    const rl = rateLimit({ key: `signup:${ip}`, limit: 5, windowMs: 10 * 60 * 1000 });
+    if (!rl.ok) {
+      return rateLimitResponse(NextResponse, rl, "Too many signup attempts. Try again in a few minutes.");
+    }
+
     await connectDB();
     const body = await req.json();
-    const { name, email, phone, password, referenceNumber, paymentProvider, senderName, referralUsed, paymentProofUrl } = body;
+    const { name, email, phone, password, referenceNumber, paymentProvider, senderName, referralUsed, paymentProofUrl, confirmedAdult, acceptedTerms } = body;
 
     if (!name || !email || !phone || !password || !referenceNumber) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
     if (password.length < 6) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+    if (!confirmedAdult) {
+      return NextResponse.json({ error: "You must confirm you are 18+ to register" }, { status: 400 });
+    }
+    if (!acceptedTerms) {
+      return NextResponse.json({ error: "You must accept the Terms of Service and Privacy Policy" }, { status: 400 });
     }
 
     // Get signup fee from settings
@@ -63,6 +78,8 @@ export async function POST(req) {
       bettingId,
       amountPaid: SIGNUP_FEE,
       status: "pending",
+      confirmedAdult: true,
+      acceptedTermsAt: new Date(),
     });
 
     await Notification.create({

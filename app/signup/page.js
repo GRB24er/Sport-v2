@@ -20,6 +20,8 @@ export default function SignupPage() {
   const [showPw, setShowPw] = useState(false);
   const [provider, setProvider] = useState(null);
   const [form, setForm] = useState({ name:"", email:"", phone:"", password:"", confirm:"", referral:"" });
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [refNum, setRefNum] = useState("");
   const [senderName, setSenderName] = useState("");
   const [created, setCreated] = useState(null);
@@ -82,6 +84,8 @@ export default function SignupPage() {
     if (form.phone.length < 7) return setErr("Enter a valid phone number");
     if (form.password.length < 6) return setErr("Password must be at least 6 characters");
     if (form.password !== form.confirm) return setErr("Passwords don't match");
+    if (!confirmedAdult) return setErr("You must confirm you are 18 or older");
+    if (!acceptedTerms) return setErr("You must accept the Terms of Service and Privacy Policy");
     setStep(2);
   };
 
@@ -128,7 +132,7 @@ export default function SignupPage() {
     try {
       const res = await fetch("/api/users", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name:form.name, email:form.email, phone:form.phone, password:form.password, referenceNumber:refNum.trim(), paymentProvider:provider||"", senderName:senderName.trim(), referralUsed:form.referral||null, paymentProofUrl:proofUrl }),
+        body: JSON.stringify({ name:form.name, email:form.email, phone:form.phone, password:form.password, referenceNumber:refNum.trim(), paymentProvider:provider||"", senderName:senderName.trim(), referralUsed:form.referral||null, paymentProofUrl:proofUrl, confirmedAdult, acceptedTerms }),
       });
       const data = await res.json();
       if (!res.ok) { setErr(data.error || "Registration failed"); setLoading(false); return; }
@@ -253,6 +257,33 @@ export default function SignupPage() {
                 <div className="su-field fu fu4"><label className="su-lbl">Password</label><div className="su-pw"><input className="su-inp" type={showPw?"text":"password"} placeholder="Min 6 characters" value={form.password} onChange={e=>upd("password",e.target.value)} /><button type="button" className="su-pw-btn" onClick={()=>setShowPw(!showPw)}>{showPw?"Hide":"Show"}</button></div></div>
                 <div className="su-field fu fu4"><label className="su-lbl">Confirm Password</label><input className="su-inp" type="password" placeholder="Re-enter password" value={form.confirm} onChange={e=>upd("confirm",e.target.value)} /></div>
                 <div className="su-field fu fu5"><label className="su-lbl">Referral Code (Optional)</label><input className="su-inp" placeholder="e.g. BG-XXXX" value={form.referral} onChange={e=>upd("referral",e.target.value)} /></div>
+
+                {/* 18+ AGE GATE + TERMS — required by law in most jurisdictions */}
+                <div className="fu fu5" style={{display:"flex",flexDirection:"column",gap:10,padding:"14px 16px",background:"rgba(11,13,16,0.5)",border:"1px solid #1E2028",borderRadius:12,marginBottom:14}}>
+                  <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",fontSize:13,color:"#bbb",lineHeight:1.5}}>
+                    <input
+                      type="checkbox"
+                      checked={confirmedAdult}
+                      onChange={e=>setConfirmedAdult(e.target.checked)}
+                      style={{marginTop:3,width:18,height:18,accentColor:"#0B9635",cursor:"pointer",flexShrink:0}}
+                    />
+                    <span><strong style={{color:"#F0F0F2"}}>I confirm I am 18 years or older</strong> and that gambling/sports prediction services are legal in my jurisdiction.</span>
+                  </label>
+                  <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",fontSize:13,color:"#bbb",lineHeight:1.5}}>
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={e=>setAcceptedTerms(e.target.checked)}
+                      style={{marginTop:3,width:18,height:18,accentColor:"#0B9635",cursor:"pointer",flexShrink:0}}
+                    />
+                    <span>I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Privacy Policy</a>.</span>
+                  </label>
+                  <div style={{fontSize:11,color:"#555",lineHeight:1.5,paddingTop:6,borderTop:"1px solid #1E2028"}}>
+                    ⚠️ Sports betting involves risk. Never wager more than you can afford to lose.{" "}
+                    <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{color:"#D4AF37"}}>Get help if gambling is a problem.</a>
+                  </div>
+                </div>
+
                 {err&&<div className="su-err">⚠ {err}</div>}
                 <button type="submit" className="su-btn su-btn-r fu fu5">Continue to Payment</button>
               </form>
