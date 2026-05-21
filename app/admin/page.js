@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Sparkline, { TrendDelta } from "@/components/Sparkline";
 
 const LOGO = 60;
 const DEF_FEE = 20;
@@ -49,6 +50,7 @@ export default function AdminDash() {
   const [dataLoaded,setDataLoaded] = useState(false);
   const [uploadsWithImages,setUploadsWithImages] = useState(null);
   const [loadingImages,setLoadingImages] = useState(false);
+  const [analytics,setAnalytics] = useState(null);
 
   useEffect(() => {
     if(status==="unauthenticated") router.push("/login");
@@ -89,6 +91,12 @@ export default function AdminDash() {
   };
 
   useEffect(() => { if(session?.user?.role==="admin") load(); },[session]);
+
+  // Lazy-load 30-day analytics on Overview tab
+  useEffect(() => {
+    if (tab !== "overview" || analytics) return;
+    fetch("/api/admin/analytics").then(r => r.ok ? r.json() : null).then(d => { if (d && !d.error) setAnalytics(d); }).catch(()=>{});
+  }, [tab, analytics]);
 
   // Lazy-load upload images only when Uploads tab is opened
   useEffect(() => {
@@ -496,6 +504,74 @@ export default function AdminDash() {
               </div>
             </div>
             ):null;})()}
+
+            {/* 30-DAY ANALYTICS — sparklines + period-over-period deltas */}
+            {analytics && (
+              <div style={{marginBottom:16}}>
+                <div style={section}>📈 LAST 30 DAYS</div>
+                <div className="agrid4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:12}}>
+                  {[
+                    { k:"revenue", l:"REVENUE", c:"#0B9635", fmt:v=>fG(v), icon:"💵" },
+                    { k:"newUsers", l:"NEW USERS", c:"#D4AF37", fmt:v=>String(v), icon:"👥" },
+                    { k:"rounds", l:"ROUNDS", c:"#8B5CF6", fmt:v=>String(v), icon:"⚽" },
+                    { k:"uploads", l:"UPLOADS", c:"#94A7BD", fmt:v=>String(v), icon:"📸" },
+                  ].map(({k,l,c,fmt,icon}, i) => {
+                    const series = analytics.series[k] || [];
+                    const total = analytics.totals[k] || 0;
+                    const delta = analytics.deltas[k] || { prev: 0, curr: 0 };
+                    return (
+                      <div key={k} className={`as d${i+1}`} style={{...stat, padding:14}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                          <div>
+                            <div style={{...lbl, marginBottom:2}}>{icon} {l}</div>
+                            <div style={{...val, fontSize:22, color:c}}>{fmt(total)}</div>
+                          </div>
+                          <TrendDelta current={delta.curr} previous={delta.prev} color={c} />
+                        </div>
+                        <Sparkline data={series} width={160} height={36} color={c} ariaLabel={`${l} last 30 days`} />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* AI win-rate trend + tier breakdown */}
+                <div className="agrid2" style={{display:"grid",gridTemplateColumns:"2fr 3fr",gap:12,marginBottom:12}}>
+                  <div style={{...stat, padding:16}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <div>
+                        <div style={lbl}>🎯 AI WIN-RATE TREND</div>
+                        <div style={{...val, fontSize:26, color:analytics.totals.aiWinRate>=60?"#0B9635":analytics.totals.aiWinRate>=50?"#D4AF37":"#E31725"}}>{analytics.totals.aiWinRate}%</div>
+                        <div style={{fontSize:11,color:"#444"}}>{analytics.totals.aiWins}W of {analytics.totals.aiRoundsResolved} resolved</div>
+                      </div>
+                    </div>
+                    <Sparkline data={analytics.series.aiWinRate} width={260} height={50} color="#D4AF37" ariaLabel="AI win-rate by day" />
+                  </div>
+                  <div style={{...stat, padding:16}}>
+                    <div style={lbl}>🤖 AI WIN-RATE BY TIER (30D)</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginTop:10}}>
+                      {[
+                        {k:"gold",l:"Gold",c:"#D4AF37",i:"🥇"},
+                        {k:"platinum",l:"Platinum",c:"#94A7BD",i:"🥈"},
+                        {k:"diamond",l:"Diamond",c:"#7DD3E8",i:"💎"},
+                      ].map(t => {
+                        const s = analytics.tierStats[t.k] || { winRate:0, wins:0, losses:0, total:0 };
+                        return (
+                          <div key={t.k} style={{background:"#0B0D1060",border:`1px solid ${t.c}25`,borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
+                            <div style={{fontSize:14,marginBottom:3}}>{t.i}</div>
+                            <div style={{...val,fontSize:18,color:t.c}}>{s.winRate}%</div>
+                            <div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"#444"}}>{s.wins}W / {s.losses}L</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginTop:12,paddingTop:10,borderTop:"1px solid #1E2028",fontSize:11,color:"#555"}}>
+                      <span>Avg claims/round</span>
+                      <strong style={{color:"#0B9635"}}>{analytics.engagement.avgClaimsPerRound}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Package breakdown */}
             <div style={section}>PACKAGE BREAKDOWN</div>
@@ -1141,6 +1217,43 @@ export default function AdminDash() {
               <div style={{marginBottom:12}}><label style={{...lbl,display:"block",marginBottom:4}}>USDT Wallet (TRC20 — Tron)</label><input value={settingsForm.usdtTrc20Address||""} onChange={e=>setSettingsForm(s=>({...s,usdtTrc20Address:e.target.value}))} placeholder="e.g. TN8s3f8dNz..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #26A17B30",borderRadius:8,color:"#26A17B",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
               <div style={{marginBottom:12}}><label style={{...lbl,display:"block",marginBottom:4}}>USDT Wallet (ERC20 — Ethereum)</label><input value={settingsForm.usdtErc20Address||""} onChange={e=>setSettingsForm(s=>({...s,usdtErc20Address:e.target.value}))} placeholder="e.g. 0x742d35Cc..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #627EEA30",borderRadius:8,color:"#627EEA",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
               <div><label style={{...lbl,display:"block",marginBottom:4}}>Bitcoin (BTC) Address</label><input value={settingsForm.btcAddress||""} onChange={e=>setSettingsForm(s=>({...s,btcAddress:e.target.value}))} placeholder="e.g. bc1q5d9r3..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #F7931A30",borderRadius:8,color:"#F7931A",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
+            </div>
+
+            {/* AI PREDICTOR MODELS */}
+            <div style={{...card,borderColor:"#8B5CF630"}}><div style={{fontSize:12,fontWeight:700,color:"#8B5CF6",marginBottom:14}}>🤖 AI PREDICTOR MODELS (PayPerQ)</div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Pick which model PayPerQ should use for each tier. Leave blank to fall back to the <code style={{color:"#8B5CF6"}}>PPQ_MODEL</code> env. Examples: <code>gpt-4o</code>, <code>gpt-4o-mini</code>, <code>claude-sonnet-4-5</code>, <code>claude-opus-4</code>.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+                {l:"🥇 Gold tier model",k:"aiModelGold",ph:"gpt-4o-mini"},
+                {l:"🥈 Platinum tier model",k:"aiModelPlatinum",ph:"gpt-4o"},
+                {l:"💎 Diamond tier model",k:"aiModelDiamond",ph:"claude-sonnet-4-5"},
+                {l:"💬 Chat assistant model",k:"aiModelChat",ph:"gpt-4o"},
+              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} placeholder={f.ph} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"monospace",outline:"none"}} /></div>))}</div>
+            </div>
+
+            {/* AI CHAT ASSISTANT */}
+            <div style={{...card,borderColor:"#0B963520"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635"}}>💬 AI CHAT ASSISTANT</div><label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}><span style={{fontSize:11,color:"#555"}}>Enabled</span><div onClick={()=>setSettingsForm(s=>({...s,aiChatEnabled:!(s.aiChatEnabled===false?false:s.aiChatEnabled!==false)}))} style={{width:36,height:20,borderRadius:10,background:settingsForm.aiChatEnabled!==false?"#0B9635":"#1E2028",cursor:"pointer",position:"relative",transition:"all .2s"}}><div style={{width:16,height:16,borderRadius:8,background:"#fff",position:"absolute",top:2,left:settingsForm.aiChatEnabled!==false?18:2,transition:"left .2s"}} /></div></label></div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>The conversational AI analyst on the dashboard. Sets a per-user daily message cap to control PayPerQ spend.</p>
+              <div><label style={{...lbl,display:"block",marginBottom:4}}>Daily message limit per user</label><input type="number" min="0" value={settingsForm.aiChatDailyLimit||0} onChange={e=>setSettingsForm(s=>({...s,aiChatDailyLimit:Number(e.target.value)}))} placeholder="20" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>
+            </div>
+
+            {/* PUSH NOTIFICATIONS */}
+            <div style={{...card,borderColor:"#D4AF3730"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#D4AF37"}}>🔔 WEB PUSH NOTIFICATIONS</div><label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}><span style={{fontSize:11,color:"#555"}}>Enabled</span><div onClick={()=>setSettingsForm(s=>({...s,pushEnabled:!s.pushEnabled}))} style={{width:36,height:20,borderRadius:10,background:settingsForm.pushEnabled?"#0B9635":"#1E2028",cursor:"pointer",position:"relative",transition:"all .2s"}}><div style={{width:16,height:16,borderRadius:8,background:"#fff",position:"absolute",top:2,left:settingsForm.pushEnabled?18:2,transition:"left .2s"}} /></div></label></div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Generate keys once with <code style={{color:"#D4AF37"}}>npx web-push generate-vapid-keys</code> on a server with web-push installed, then paste them below. Keys are stored in the DB so you don't have to redeploy.</p>
+              <div style={{marginBottom:10}}><label style={{...lbl,display:"block",marginBottom:4}}>VAPID Public Key</label><input value={settingsForm.vapidPublicKey||""} onChange={e=>setSettingsForm(s=>({...s,vapidPublicKey:e.target.value}))} placeholder="BNc..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#D4AF37",fontSize:11,fontFamily:"monospace",outline:"none"}} /></div>
+              <div style={{marginBottom:10}}><label style={{...lbl,display:"block",marginBottom:4}}>VAPID Private Key</label><input value={settingsForm.vapidPrivateKey||""} onChange={e=>setSettingsForm(s=>({...s,vapidPrivateKey:e.target.value}))} placeholder="(secret)" type="password" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#D4AF37",fontSize:11,fontFamily:"monospace",outline:"none"}} /></div>
+              <div style={{marginBottom:10}}><label style={{...lbl,display:"block",marginBottom:4}}>VAPID Subject (mailto)</label><input value={settingsForm.vapidSubject||""} onChange={e=>setSettingsForm(s=>({...s,vapidSubject:e.target.value}))} placeholder="mailto:support@betgenius.ai" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>
+              <button type="button" onClick={async()=>{
+                const title=prompt("Push title?","🏆 New prediction live");
+                if(!title)return;
+                const body=prompt("Push body?","A fresh expert pick is ready in your dashboard.");
+                const url=prompt("Open URL when clicked?","/dashboard");
+                try{
+                  const r=await fetch("/api/push/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target:"all",payload:{title,body,url}})});
+                  const d=await r.json();
+                  if(r.ok)alert(`Sent: ${d.sent} • Failed: ${d.failed} • Cleaned: ${d.cleaned}`);
+                  else alert("Failed: "+(d.error||"unknown"));
+                }catch(e){alert("Network error");}
+              }} style={{...btn("#D4AF37","#000"),padding:"10px 16px",fontSize:12,marginTop:4}}>📣 Send Test Push to All Subscribers</button>
             </div>
 
             <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>📱 WHATSAPP</div>

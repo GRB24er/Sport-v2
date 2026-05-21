@@ -12,6 +12,17 @@ import { isPackageExpired } from "@/lib/packageUtils";
 import { mToObj } from "@/lib/utils";
 import { GAME_NAMES, PKG_LIMITS_DEF } from "@/lib/constants";
 
+// Fire-and-forget push notification helper. Failures are swallowed so the
+// main request still succeeds if web-push isn't installed yet.
+async function pushSafely(target, payload) {
+  try {
+    const { sendPush } = await import("@/lib/pushSender");
+    await sendPush(target, payload);
+  } catch (e) {
+    console.warn("push notification skipped:", e.message);
+  }
+}
+
 async function getPkgLimits() {
   try {
     const s = await Settings.findOne({ key: "main" }).lean();
@@ -95,6 +106,13 @@ export async function POST(req) {
           message: `🔥 New ${GAME_NAMES[gameId]} round is LIVE! ${matches.length} matches ready. Open the app to play!`,
           forUserId: u._id,
         })));
+        // Push notification to all subscribers (non-blocking)
+        pushSafely({ roleAll: true }, {
+          title: `🔥 ${GAME_NAMES[gameId]} round live!`,
+          body: `${matches.length} matches • Total odds ${totalOdd.toFixed(2)}x${isFree ? " • FREE" : ""}`,
+          url: "/dashboard",
+          tag: `round-${round._id}`,
+        });
       }
       await Notification.create({
         type: "system",
@@ -220,6 +238,12 @@ export async function PATCH(req) {
             message: `🔥 New ${GAME_NAMES[round.gameId]} round is LIVE! ${round.matches.length} matches. Open app to play!`,
             forUserId: u._id,
           })));
+          pushSafely({ roleAll: true }, {
+            title: `🔥 ${GAME_NAMES[round.gameId]} round live!`,
+            body: `${round.matches.length} matches • ${round.totalOdd?.toFixed?.(2) || round.totalOdd}x`,
+            url: "/dashboard",
+            tag: `round-${round._id}`,
+          });
         }
         return NextResponse.json({ message: "Published!", round });
       }
@@ -234,7 +258,20 @@ export async function PATCH(req) {
         if (!["won", "lost", "partial", "pending"].includes(result)) {
           return NextResponse.json({ error: "Invalid result. Use: won, lost, partial, pending" }, { status: 400 });
         }
-        await Round.findByIdAndUpdate(roundId, { result, resultNote: body.resultNote || "" });
+        const updated = await Round.findByIdAndUpdate(roundId, { result, resultNote: body.resultNote || "" }, { new: true });
+        // Push notifications only to users who claimed this round
+        if (updated && (result === "won" || result === "lost") && Array.isArray(updated.claimedBy) && updated.claimedBy.length) {
+          const emoji = result === "won" ? "🏆" : "📉";
+          const verb = result === "won" ? "WON" : "lost";
+          pushSafely(updated.claimedBy, {
+            title: `${emoji} Round ${verb} (${updated.totalOdd?.toFixed?.(2) || updated.totalOdd}x)`,
+            body: result === "won"
+              ? `Your ${GAME_NAMES[updated.gameId]} round hit! See it in your dashboard.`
+              : `Better luck on the next one — fresh predictions coming soon.`,
+            url: "/dashboard",
+            tag: `result-${updated._id}`,
+          });
+        }
         return NextResponse.json({ message: `Round marked as ${result}` });
       }
 

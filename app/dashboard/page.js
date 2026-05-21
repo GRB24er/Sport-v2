@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import PushOptIn from "@/components/PushOptIn";
+import UpgradePrompt from "@/components/UpgradePrompt";
+import ChatLauncher from "@/components/ChatLauncher";
 
 const fUSD = v => '$' + Number(v).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
 const timeAgo = (d) => {
@@ -460,6 +463,12 @@ export default function Dashboard() {
       <main className="mn">
         <div className="asu"><h1 className="mt">Hey, {firstName} {"\u{1F44B}"}</h1><p className="ms">{anyActive?"Your predictions are ready. Check your rounds!":anyPending?"Your package is being verified. Hang tight!":"Subscribe to get expert football predictions."}</p></div>
 
+        {/* SMART UPGRADE PROMPT — only shows when there's a meaningful upgrade path */}
+        <UpgradePrompt user={userData} stats={stats} onClick={() => { const lg = GAMES.find(x => x.live); if (lg) openSub(lg); }} />
+
+        {/* PUSH NOTIFICATION OPT-IN — hides itself if unsupported or already subscribed */}
+        <PushOptIn compact />
+
         {/* STATS OVERVIEW */}
         <div className="stg asu ad1">
           <div className="stc">
@@ -778,9 +787,38 @@ export default function Dashboard() {
           </>
         )}
 
+        {/* QUICK LINKS to Achievements + AI Chat + Bankroll */}
+        <div className="sec asu ad4">{"✨"} EXPLORE</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
+          <a href="/dashboard/achievements" style={{textDecoration:"none",color:"inherit"}}>
+            <div style={{background:"linear-gradient(135deg,#12141A,#D4AF3708)",border:"1px solid #D4AF3725",borderRadius:14,padding:"14px 12px",transition:"all 0.2s",cursor:"pointer"}}>
+              <div style={{fontSize:22,marginBottom:5}}>{"\u{1F3C6}"}</div>
+              <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>Trophies</div>
+              <div style={{fontSize:10,color:"#666",lineHeight:1.4}}>Unlock badges</div>
+            </div>
+          </a>
+          <a href="/dashboard/chat" style={{textDecoration:"none",color:"inherit"}}>
+            <div style={{background:"linear-gradient(135deg,#12141A,#0B963510)",border:"1px solid #0B963530",borderRadius:14,padding:"14px 12px",transition:"all 0.2s",cursor:"pointer"}}>
+              <div style={{fontSize:22,marginBottom:5}}>{"\u{1F916}"}</div>
+              <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>AI Analyst</div>
+              <div style={{fontSize:10,color:"#666",lineHeight:1.4}}>Ask for picks</div>
+            </div>
+          </a>
+          <a href="/dashboard/bankroll" style={{textDecoration:"none",color:"inherit"}}>
+            <div style={{background:"linear-gradient(135deg,#12141A,#7DD3E810)",border:"1px solid #7DD3E830",borderRadius:14,padding:"14px 12px",transition:"all 0.2s",cursor:"pointer"}}>
+              <div style={{fontSize:22,marginBottom:5}}>{"\u{1F4B0}"}</div>
+              <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>Bankroll</div>
+              <div style={{fontSize:10,color:"#666",lineHeight:1.4}}>Track P&L · Kelly</div>
+            </div>
+          </a>
+        </div>
+
         {/* Coming soon section removed — all games are now live */}
         <div style={{height:70}} />
       </main>
+
+      {/* FLOATING AI CHAT LAUNCHER */}
+      <ChatLauncher />
 
       {/* TOAST */}
       {toast && <div className="toast">{"\u2713"} {toast}</div>}
