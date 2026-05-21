@@ -36,6 +36,13 @@
       "description": "Ask the AI assistant for betting analysis",
       "url": "/dashboard/chat",
       "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Bankroll",
+      "short_name": "Bankroll",
+      "description": "Track stakes, P&L and use Kelly stake sizing",
+      "url": "/dashboard/bankroll",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
     }
   ]
 }

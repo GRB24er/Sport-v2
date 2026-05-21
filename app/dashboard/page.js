@@ -787,21 +787,28 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* QUICK LINKS to Achievements + AI Chat */}
+        {/* QUICK LINKS to Achievements + AI Chat + Bankroll */}
         <div className="sec asu ad4">{"✨"} EXPLORE</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:12}}>
           <a href="/dashboard/achievements" style={{textDecoration:"none",color:"inherit"}}>
-            <div style={{background:"linear-gradient(135deg,#12141A,#D4AF3708)",border:"1px solid #D4AF3725",borderRadius:14,padding:"16px 14px",transition:"all 0.2s",cursor:"pointer"}}>
-              <div style={{fontSize:26,marginBottom:6}}>{"\u{1F3C6}"}</div>
-              <div style={{fontWeight:700,fontSize:13,marginBottom:2}}>Trophy Case</div>
-              <div style={{fontSize:11,color:"#666",lineHeight:1.4}}>Unlock badges as you win</div>
+            <div style={{background:"linear-gradient(135deg,#12141A,#D4AF3708)",border:"1px solid #D4AF3725",borderRadius:14,padding:"14px 12px",transition:"all 0.2s",cursor:"pointer"}}>
+              <div style={{fontSize:22,marginBottom:5}}>{"\u{1F3C6}"}</div>
+              <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>Trophies</div>
+              <div style={{fontSize:10,color:"#666",lineHeight:1.4}}>Unlock badges</div>
             </div>
           </a>
           <a href="/dashboard/chat" style={{textDecoration:"none",color:"inherit"}}>
-            <div style={{background:"linear-gradient(135deg,#12141A,#0B963510)",border:"1px solid #0B963530",borderRadius:14,padding:"16px 14px",transition:"all 0.2s",cursor:"pointer"}}>
-              <div style={{fontSize:26,marginBottom:6}}>{"\u{1F916}"}</div>
-              <div style={{fontWeight:700,fontSize:13,marginBottom:2}}>AI Analyst</div>
-              <div style={{fontSize:11,color:"#666",lineHeight:1.4}}>Ask for picks & analysis</div>
+            <div style={{background:"linear-gradient(135deg,#12141A,#0B963510)",border:"1px solid #0B963530",borderRadius:14,padding:"14px 12px",transition:"all 0.2s",cursor:"pointer"}}>
+              <div style={{fontSize:22,marginBottom:5}}>{"\u{1F916}"}</div>
+              <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>AI Analyst</div>
+              <div style={{fontSize:10,color:"#666",lineHeight:1.4}}>Ask for picks</div>
+            </div>
+          </a>
+          <a href="/dashboard/bankroll" style={{textDecoration:"none",color:"inherit"}}>
+            <div style={{background:"linear-gradient(135deg,#12141A,#7DD3E810)",border:"1px solid #7DD3E830",borderRadius:14,padding:"14px 12px",transition:"all 0.2s",cursor:"pointer"}}>
+              <div style={{fontSize:22,marginBottom:5}}>{"\u{1F4B0}"}</div>
+              <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>Bankroll</div>
+              <div style={{fontSize:10,color:"#666",lineHeight:1.4}}>Track P&L · Kelly</div>
             </div>
           </a>
         </div>

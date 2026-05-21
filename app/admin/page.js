@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Sparkline, { TrendDelta } from "@/components/Sparkline";
 
 const LOGO = 60;
 const DEF_FEE = 20;
@@ -49,6 +50,7 @@ export default function AdminDash() {
   const [dataLoaded,setDataLoaded] = useState(false);
   const [uploadsWithImages,setUploadsWithImages] = useState(null);
   const [loadingImages,setLoadingImages] = useState(false);
+  const [analytics,setAnalytics] = useState(null);
 
   useEffect(() => {
     if(status==="unauthenticated") router.push("/login");
@@ -89,6 +91,12 @@ export default function AdminDash() {
   };
 
   useEffect(() => { if(session?.user?.role==="admin") load(); },[session]);
+
+  // Lazy-load 30-day analytics on Overview tab
+  useEffect(() => {
+    if (tab !== "overview" || analytics) return;
+    fetch("/api/admin/analytics").then(r => r.ok ? r.json() : null).then(d => { if (d && !d.error) setAnalytics(d); }).catch(()=>{});
+  }, [tab, analytics]);
 
   // Lazy-load upload images only when Uploads tab is opened
   useEffect(() => {
@@ -496,6 +504,74 @@ export default function AdminDash() {
               </div>
             </div>
             ):null;})()}
+
+            {/* 30-DAY ANALYTICS — sparklines + period-over-period deltas */}
+            {analytics && (
+              <div style={{marginBottom:16}}>
+                <div style={section}>📈 LAST 30 DAYS</div>
+                <div className="agrid4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:12}}>
+                  {[
+                    { k:"revenue", l:"REVENUE", c:"#0B9635", fmt:v=>fG(v), icon:"💵" },
+                    { k:"newUsers", l:"NEW USERS", c:"#D4AF37", fmt:v=>String(v), icon:"👥" },
+                    { k:"rounds", l:"ROUNDS", c:"#8B5CF6", fmt:v=>String(v), icon:"⚽" },
+                    { k:"uploads", l:"UPLOADS", c:"#94A7BD", fmt:v=>String(v), icon:"📸" },
+                  ].map(({k,l,c,fmt,icon}, i) => {
+                    const series = analytics.series[k] || [];
+                    const total = analytics.totals[k] || 0;
+                    const delta = analytics.deltas[k] || { prev: 0, curr: 0 };
+                    return (
+                      <div key={k} className={`as d${i+1}`} style={{...stat, padding:14}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                          <div>
+                            <div style={{...lbl, marginBottom:2}}>{icon} {l}</div>
+                            <div style={{...val, fontSize:22, color:c}}>{fmt(total)}</div>
+                          </div>
+                          <TrendDelta current={delta.curr} previous={delta.prev} color={c} />
+                        </div>
+                        <Sparkline data={series} width={160} height={36} color={c} ariaLabel={`${l} last 30 days`} />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* AI win-rate trend + tier breakdown */}
+                <div className="agrid2" style={{display:"grid",gridTemplateColumns:"2fr 3fr",gap:12,marginBottom:12}}>
+                  <div style={{...stat, padding:16}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <div>
+                        <div style={lbl}>🎯 AI WIN-RATE TREND</div>
+                        <div style={{...val, fontSize:26, color:analytics.totals.aiWinRate>=60?"#0B9635":analytics.totals.aiWinRate>=50?"#D4AF37":"#E31725"}}>{analytics.totals.aiWinRate}%</div>
+                        <div style={{fontSize:11,color:"#444"}}>{analytics.totals.aiWins}W of {analytics.totals.aiRoundsResolved} resolved</div>
+                      </div>
+                    </div>
+                    <Sparkline data={analytics.series.aiWinRate} width={260} height={50} color="#D4AF37" ariaLabel="AI win-rate by day" />
+                  </div>
+                  <div style={{...stat, padding:16}}>
+                    <div style={lbl}>🤖 AI WIN-RATE BY TIER (30D)</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginTop:10}}>
+                      {[
+                        {k:"gold",l:"Gold",c:"#D4AF37",i:"🥇"},
+                        {k:"platinum",l:"Platinum",c:"#94A7BD",i:"🥈"},
+                        {k:"diamond",l:"Diamond",c:"#7DD3E8",i:"💎"},
+                      ].map(t => {
+                        const s = analytics.tierStats[t.k] || { winRate:0, wins:0, losses:0, total:0 };
+                        return (
+                          <div key={t.k} style={{background:"#0B0D1060",border:`1px solid ${t.c}25`,borderRadius:10,padding:"10px 6px",textAlign:"center"}}>
+                            <div style={{fontSize:14,marginBottom:3}}>{t.i}</div>
+                            <div style={{...val,fontSize:18,color:t.c}}>{s.winRate}%</div>
+                            <div style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"#444"}}>{s.wins}W / {s.losses}L</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginTop:12,paddingTop:10,borderTop:"1px solid #1E2028",fontSize:11,color:"#555"}}>
+                      <span>Avg claims/round</span>
+                      <strong style={{color:"#0B9635"}}>{analytics.engagement.avgClaimsPerRound}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Package breakdown */}
             <div style={section}>PACKAGE BREAKDOWN</div>
