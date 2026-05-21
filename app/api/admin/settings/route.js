@@ -9,12 +9,27 @@ let settingsCache = null;
 let settingsCacheTime = 0;
 const CACHE_TTL = 60 * 1000; // 60 seconds
 
+// Fields that must NEVER leak to non-admins. The settings GET endpoint is
+// public (user dashboards read prices/wallets from here) so we strip
+// secrets server-side for everyone except admins.
+const ADMIN_ONLY_FIELDS = ["vapidPrivateKey"];
+
+function publicSettings(s) {
+  if (!s) return s;
+  const out = { ...s };
+  for (const k of ADMIN_ONLY_FIELDS) delete out[k];
+  return out;
+}
+
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === "admin";
+
     // Return cached settings if fresh
     const now = Date.now();
     if (settingsCache && (now - settingsCacheTime) < CACHE_TTL) {
-      return NextResponse.json({ settings: settingsCache });
+      return NextResponse.json({ settings: isAdmin ? settingsCache : publicSettings(settingsCache) });
     }
 
     await connectDB();
@@ -28,10 +43,10 @@ export async function GET() {
     settingsCache = s;
     settingsCacheTime = now;
 
-    return NextResponse.json({ settings: s });
+    return NextResponse.json({ settings: isAdmin ? s : publicSettings(s) });
   } catch (e) {
     console.error("Settings GET error:", e.message);
-    return NextResponse.json({ settings: settingsCache || {}, error: e.message }, { status: 500 });
+    return NextResponse.json({ settings: settingsCache ? publicSettings(settingsCache) : {}, error: e.message }, { status: 500 });
   }
 }
 

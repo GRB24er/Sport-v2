@@ -38,6 +38,25 @@ const settingsSchema = new mongoose.Schema({
   // Contact
   whatsappNumber: { type: String, default: "" },
   supportEmail: { type: String, default: "support@betgenius.ai" },
+
+  // AI Predictor model selection per tier (overrides PPQ_MODEL env)
+  aiModelGold: { type: String, default: "" },
+  aiModelPlatinum: { type: String, default: "" },
+  aiModelDiamond: { type: String, default: "" },
+  aiModelChat: { type: String, default: "" },
+
+  // AI Chat Assistant
+  aiChatEnabled: { type: Boolean, default: true },
+  aiChatDailyLimit: { type: Number, default: 20 },
+
+  // Push notifications (VAPID — generate once with `npx web-push generate-vapid-keys`)
+  pushEnabled: { type: Boolean, default: false },
+  vapidPublicKey: { type: String, default: "" },
+  vapidPrivateKey: { type: String, default: "" },
+  vapidSubject: { type: String, default: "mailto:support@betgenius.ai" },
+
+  // Daily free prediction
+  dailyFreeEnabled: { type: Boolean, default: true },
 }, { timestamps: true });
 
 export default mongoose.models.Settings || mongoose.model("Settings", settingsSchema);

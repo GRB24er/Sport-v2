@@ -11,6 +11,40 @@ const WINS = [
   { teams: "Multiple — 3 Legs", stake: "100", won: "3,045.17" },
 ];
 
+const TESTIMONIALS = [
+  { name: "Kwame A.", role: "Diamond member · Ghana", stars: 5, body: "I joined for the Diamond HT/FT picks. First weekend I hit 2 of 3. The analysis they share is what won me over — it's not just picks, it's reasoning.", avatar: "K", color: "#0B9635" },
+  { name: "Tobi O.", role: "Platinum member · Nigeria", stars: 5, body: "I was skeptical about AI predictions. Three months in, my win rate is over 60%. The chat assistant is a game-changer for analyzing my own slips.", avatar: "T", color: "#D4AF37" },
+  { name: "Ama S.", role: "Gold member · Kenya", stars: 5, body: "Honest, transparent, and the customer support is real human beings. The streak feature keeps me sharp — I'm at 7 wins in a row.", avatar: "A", color: "#7DD3E8" },
+  { name: "Daniel M.", role: "Diamond member · South Africa", stars: 5, body: "Push notifications mean I never miss a round. The win/loss tracker shows you exactly where the AI shines. Best 160 bucks I've spent.", avatar: "D", color: "#94A7BD" },
+];
+
+const FAQS = [
+  { q: "How accurate are the predictions?", a: "Our published win-rate is verified inside the dashboard — every result is tracked. We don't promise 100% — anyone who does is lying. We do promise expert reasoning, real analysis, and full transparency on every round." },
+  { q: "What's the difference between Gold, Platinum, and Diamond?", a: "Gold (15–25 combined odds) focuses on the safest picks across the top 4 leagues. Platinum (25–50 odds) mixes safer picks with value plays. Diamond focuses on premium HT/FT and Correct Score markets — high odds, specialist analysis." },
+  { q: "How do I receive my predictions?", a: "Predictions appear in your dashboard the moment they're published. Enable push notifications and you'll get an instant alert when a new round drops or your result is in." },
+  { q: "Is my payment information safe?", a: "We never store card details on our servers. Card payments are handled by Stripe / Paystack. Crypto and mobile money payments go directly to verified wallets shown in your dashboard." },
+  { q: "Can I get a refund?", a: "Subscriptions are non-refundable once predictions in that round have been delivered. If you have an issue with a specific round, contact support — we'll review case by case." },
+  { q: "Do you offer a free trial?", a: "Yes — every approved user gets access to our free daily prediction. It's a real pick with full analysis, so you can see exactly what paid tiers look like." },
+];
+
+function FaqItem({ q, a, idx }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{background:"#12141A",border:`1px solid ${open ? "#0B963540" : "#1E2028"}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.2s",animation:`fadeUp 0.4s ${idx*0.05}s both`}}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"16px 18px",background:"transparent",border:"none",color:"#F0F0F2",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",textAlign:"left"}}
+      >
+        <span>{q}</span>
+        <span style={{color:open?"#0B9635":"#555",fontSize:18,fontWeight:300,transition:"transform 0.2s",transform:open?"rotate(45deg)":"none",flexShrink:0}}>+</span>
+      </button>
+      {open && (
+        <div style={{padding:"0 18px 18px",fontSize:13,color:"#888",lineHeight:1.65,animation:"fadeUp 0.25s"}}>{a}</div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [show, setShow] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -176,7 +210,8 @@ export default function App() {
               <a href="#how-it-works" className="vb-nav-link">How It Works</a>
               <a href="#ai-engine" className="vb-nav-link">Our Edge</a>
               <a href="#results" className="vb-nav-link">Results</a>
-              <a href="#contact" className="vb-nav-link">Contact</a>
+              <a href="#testimonials" className="vb-nav-link">Reviews</a>
+              <a href="#faq" className="vb-nav-link">FAQ</a>
             </div>
             <div className="vb-header-btns">
               <a href="/login"><button className="btn-o">Log In</button></a>
@@ -192,7 +227,8 @@ export default function App() {
           <a href="#how-it-works" className="vb-mob-link" onClick={()=>setMenuOpen(false)}>How It Works</a>
           <a href="#ai-engine" className="vb-mob-link" onClick={()=>setMenuOpen(false)}>Our Edge</a>
           <a href="#results" className="vb-mob-link" onClick={()=>setMenuOpen(false)}>Results</a>
-          <a href="#contact" className="vb-mob-link" onClick={()=>setMenuOpen(false)}>Contact</a>
+          <a href="#testimonials" className="vb-mob-link" onClick={()=>setMenuOpen(false)}>Reviews</a>
+          <a href="#faq" className="vb-mob-link" onClick={()=>setMenuOpen(false)}>FAQ</a>
           <div style={{display:"flex",gap:12,marginTop:16}}>
             <a href="/login"><button className="btn-o" style={{padding:"14px 32px",fontSize:15}} onClick={()=>setMenuOpen(false)}>Log In</button></a>
             <a href="/signup"><button className="btn-p" style={{padding:"14px 32px",fontSize:15}} onClick={()=>setMenuOpen(false)}>Sign Up</button></a>
@@ -414,6 +450,62 @@ export default function App() {
                 <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:8}}>Mobile Money</div>
                 <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>M-Pesa, MTN, Airtel Money, and more across Africa.</div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TESTIMONIALS */}
+        <section id="testimonials" className="vb-section">
+          <div className="vb-section-inner">
+            <p className="vb-section-label" style={{ color:"#D4AF37" }}>TRUSTED WORLDWIDE</p>
+            <h2 className="vb-section-title">What Our Members Say</h2>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14,maxWidth:880,margin:"0 auto"}}>
+              {TESTIMONIALS.map((t,i)=>(
+                <div key={t.name} style={{background:"#12141A",border:"1px solid #1E2028",borderRadius:14,padding:"22px 20px",display:"flex",flexDirection:"column",gap:12,transition:"all 0.3s",animation:`fadeUp 0.6s ${i*0.08}s both`}} onMouseEnter={e=>{e.currentTarget.style.borderColor=t.color+"40";e.currentTarget.style.transform="translateY(-3px)"}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#1E2028";e.currentTarget.style.transform="none"}}>
+                  <div style={{display:"flex",gap:2}}>
+                    {Array.from({length:t.stars}).map((_,si)=>(<span key={si} style={{color:"#D4AF37",fontSize:14}}>★</span>))}
+                  </div>
+                  <p style={{fontSize:13,color:"#aaa",lineHeight:1.6,fontStyle:"italic",flex:1,margin:0}}>"{t.body}"</p>
+                  <div style={{display:"flex",alignItems:"center",gap:10,paddingTop:12,borderTop:"1px solid #1E2028"}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:t.color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:"#0B0D10",flexShrink:0}}>{t.avatar}</div>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:13}}>{t.name}</div>
+                      <div style={{fontSize:11,color:"#555"}}>{t.role}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Trust badges */}
+            <div style={{display:"flex",justifyContent:"center",gap:24,flexWrap:"wrap",marginTop:40,padding:"20px 0",borderTop:"1px solid #1E2028"}}>
+              {[
+                {icon:"🔒",label:"SSL Encrypted"},
+                {icon:"✅",label:"Verified Results"},
+                {icon:"🛡️",label:"Secure Payments"},
+                {icon:"⚡",label:"Instant Delivery"},
+                {icon:"🤝",label:"24/7 Support"},
+              ].map(b=>(
+                <div key={b.label} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"#666",fontWeight:600}}>
+                  <span style={{fontSize:16}}>{b.icon}</span>
+                  <span>{b.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="vb-section" style={{background:"linear-gradient(180deg,#0B0D10,#0E1015,#0B0D10)"}}>
+          <div className="vb-section-inner" style={{maxWidth:760}}>
+            <p className="vb-section-label" style={{ color:"#0B9635" }}>QUESTIONS</p>
+            <h2 className="vb-section-title">Frequently Asked</h2>
+            <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:680,margin:"0 auto"}}>
+              {FAQS.map((f,i)=>(
+                <FaqItem key={i} q={f.q} a={f.a} idx={i} />
+              ))}
+            </div>
+            <div style={{textAlign:"center",marginTop:32,fontSize:13,color:"#555"}}>
+              Still have questions? <a href="mailto:support@betgenius.ai" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>support@betgenius.ai</a>
             </div>
           </div>
         </section>

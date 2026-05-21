@@ -1143,6 +1143,43 @@ export default function AdminDash() {
               <div><label style={{...lbl,display:"block",marginBottom:4}}>Bitcoin (BTC) Address</label><input value={settingsForm.btcAddress||""} onChange={e=>setSettingsForm(s=>({...s,btcAddress:e.target.value}))} placeholder="e.g. bc1q5d9r3..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #F7931A30",borderRadius:8,color:"#F7931A",fontSize:12,fontFamily:"monospace",outline:"none"}} /></div>
             </div>
 
+            {/* AI PREDICTOR MODELS */}
+            <div style={{...card,borderColor:"#8B5CF630"}}><div style={{fontSize:12,fontWeight:700,color:"#8B5CF6",marginBottom:14}}>🤖 AI PREDICTOR MODELS (PayPerQ)</div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Pick which model PayPerQ should use for each tier. Leave blank to fall back to the <code style={{color:"#8B5CF6"}}>PPQ_MODEL</code> env. Examples: <code>gpt-4o</code>, <code>gpt-4o-mini</code>, <code>claude-sonnet-4-5</code>, <code>claude-opus-4</code>.</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[
+                {l:"🥇 Gold tier model",k:"aiModelGold",ph:"gpt-4o-mini"},
+                {l:"🥈 Platinum tier model",k:"aiModelPlatinum",ph:"gpt-4o"},
+                {l:"💎 Diamond tier model",k:"aiModelDiamond",ph:"claude-sonnet-4-5"},
+                {l:"💬 Chat assistant model",k:"aiModelChat",ph:"gpt-4o"},
+              ].map(f=>(<div key={f.k}><label style={{...lbl,display:"block",marginBottom:4}}>{f.l}</label><input value={settingsForm[f.k]||""} onChange={e=>setSettingsForm(s=>({...s,[f.k]:e.target.value}))} placeholder={f.ph} style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"monospace",outline:"none"}} /></div>))}</div>
+            </div>
+
+            {/* AI CHAT ASSISTANT */}
+            <div style={{...card,borderColor:"#0B963520"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635"}}>💬 AI CHAT ASSISTANT</div><label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}><span style={{fontSize:11,color:"#555"}}>Enabled</span><div onClick={()=>setSettingsForm(s=>({...s,aiChatEnabled:!(s.aiChatEnabled===false?false:s.aiChatEnabled!==false)}))} style={{width:36,height:20,borderRadius:10,background:settingsForm.aiChatEnabled!==false?"#0B9635":"#1E2028",cursor:"pointer",position:"relative",transition:"all .2s"}}><div style={{width:16,height:16,borderRadius:8,background:"#fff",position:"absolute",top:2,left:settingsForm.aiChatEnabled!==false?18:2,transition:"left .2s"}} /></div></label></div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>The conversational AI analyst on the dashboard. Sets a per-user daily message cap to control PayPerQ spend.</p>
+              <div><label style={{...lbl,display:"block",marginBottom:4}}>Daily message limit per user</label><input type="number" min="0" value={settingsForm.aiChatDailyLimit||0} onChange={e=>setSettingsForm(s=>({...s,aiChatDailyLimit:Number(e.target.value)}))} placeholder="20" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>
+            </div>
+
+            {/* PUSH NOTIFICATIONS */}
+            <div style={{...card,borderColor:"#D4AF3730"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#D4AF37"}}>🔔 WEB PUSH NOTIFICATIONS</div><label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}><span style={{fontSize:11,color:"#555"}}>Enabled</span><div onClick={()=>setSettingsForm(s=>({...s,pushEnabled:!s.pushEnabled}))} style={{width:36,height:20,borderRadius:10,background:settingsForm.pushEnabled?"#0B9635":"#1E2028",cursor:"pointer",position:"relative",transition:"all .2s"}}><div style={{width:16,height:16,borderRadius:8,background:"#fff",position:"absolute",top:2,left:settingsForm.pushEnabled?18:2,transition:"left .2s"}} /></div></label></div>
+              <p style={{fontSize:11,color:"#555",marginBottom:12,lineHeight:1.5}}>Generate keys once with <code style={{color:"#D4AF37"}}>npx web-push generate-vapid-keys</code> on a server with web-push installed, then paste them below. Keys are stored in the DB so you don't have to redeploy.</p>
+              <div style={{marginBottom:10}}><label style={{...lbl,display:"block",marginBottom:4}}>VAPID Public Key</label><input value={settingsForm.vapidPublicKey||""} onChange={e=>setSettingsForm(s=>({...s,vapidPublicKey:e.target.value}))} placeholder="BNc..." style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#D4AF37",fontSize:11,fontFamily:"monospace",outline:"none"}} /></div>
+              <div style={{marginBottom:10}}><label style={{...lbl,display:"block",marginBottom:4}}>VAPID Private Key</label><input value={settingsForm.vapidPrivateKey||""} onChange={e=>setSettingsForm(s=>({...s,vapidPrivateKey:e.target.value}))} placeholder="(secret)" type="password" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#D4AF37",fontSize:11,fontFamily:"monospace",outline:"none"}} /></div>
+              <div style={{marginBottom:10}}><label style={{...lbl,display:"block",marginBottom:4}}>VAPID Subject (mailto)</label><input value={settingsForm.vapidSubject||""} onChange={e=>setSettingsForm(s=>({...s,vapidSubject:e.target.value}))} placeholder="mailto:support@betgenius.ai" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>
+              <button type="button" onClick={async()=>{
+                const title=prompt("Push title?","🏆 New prediction live");
+                if(!title)return;
+                const body=prompt("Push body?","A fresh expert pick is ready in your dashboard.");
+                const url=prompt("Open URL when clicked?","/dashboard");
+                try{
+                  const r=await fetch("/api/push/send",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target:"all",payload:{title,body,url}})});
+                  const d=await r.json();
+                  if(r.ok)alert(`Sent: ${d.sent} • Failed: ${d.failed} • Cleaned: ${d.cleaned}`);
+                  else alert("Failed: "+(d.error||"unknown"));
+                }catch(e){alert("Network error");}
+              }} style={{...btn("#D4AF37","#000"),padding:"10px 16px",fontSize:12,marginTop:4}}>📣 Send Test Push to All Subscribers</button>
+            </div>
+
             <div style={{...card,borderColor:"#0B963520"}}><div style={{fontSize:12,fontWeight:700,color:"#0B9635",marginBottom:14}}>📱 WHATSAPP</div>
               <div><label style={{...lbl,display:"block",marginBottom:4}}>WhatsApp Number</label><input value={settingsForm.whatsappNumber||""} onChange={e=>setSettingsForm(s=>({...s,whatsappNumber:e.target.value}))} placeholder="e.g. 233541234567" style={{width:"100%",padding:"10px 12px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:8,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none"}} /></div>
             </div>
