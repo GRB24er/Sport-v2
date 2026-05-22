@@ -49,6 +49,10 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: "" },
     approvedAt: { type: Date, default: null },
     approvedBy: { type: String, default: null },
+
+    // Legal / compliance — captured at signup
+    confirmedAdult: { type: Boolean, default: false },
+    acceptedTermsAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

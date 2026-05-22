@@ -229,6 +229,10 @@ body{background:#0B0D10;overflow-x:hidden}
                     <button key={s} className="sugg" onClick={() => send(s)}>{s}</button>
                   ))}
                 </div>
+                <div style={{maxWidth:560,margin:"32px auto 0",padding:"12px 16px",background:"rgba(212,175,55,0.05)",border:"1px solid rgba(212,175,55,0.18)",borderRadius:10,fontSize:11.5,color:"#888",lineHeight:1.55,textAlign:"left"}}>
+                  <strong style={{color:"#D4AF37"}}>⚠️ Important:</strong> Replies are AI-generated analysis — <strong>not financial advice</strong> and not a guarantee of outcome. Betting carries real financial risk. 18+ only.{" "}
+                  <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none"}}>Get help with gambling.</a>
+                </div>
               </div>
             ) : messages.map((m, i) => (
               <div key={i} className={`msg ${m.role === "user" ? "user" : "ai"}`}>

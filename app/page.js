@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react";
 import Logo from "@/components/Logo";
+import { BitcoinLogo, UsdtLogo, MtnMomoLogo, CardLogo } from "@/components/PaymentLogos";
 
 const WINS = [
   { teams: "NAP vs ARS / INT vs MUN", stake: "50", won: "1,355.95" },
@@ -45,10 +46,20 @@ function FaqItem({ q, a, idx }) {
   );
 }
 
+function fNumber(n) {
+  if (n === null || n === undefined) return null;
+  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K";
+  return String(n);
+}
+
 export default function App() {
   const [show, setShow] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [stats, setStats] = useState(null);
   useEffect(() => { setTimeout(() => setShow(true), 100); }, []);
+  useEffect(() => {
+    fetch("/api/stats/public").then(r => r.json()).then(setStats).catch(() => {});
+  }, []);
 
   return (
     <div className="vb-root">
@@ -269,20 +280,38 @@ export default function App() {
                 <a href="#ai-engine"><button className="btn-gold">See Our Edge ↓</button></a>
               </div>
 
-              {/* Payment badges */}
-              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:24}}>
-                {[{icon:"💳",label:"Card"},{icon:"₮",label:"USDT"},{icon:"₿",label:"BTC"},{icon:"📱",label:"Mobile Money"}].map(b=>(
-                  <span key={b.label} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:600,padding:"4px 10px",borderRadius:6,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",color:"#666"}}>{b.icon} {b.label}</span>
+              {/* Payment badges — real inline SVG logos */}
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:24,alignItems:"center"}}>
+                <span style={{fontSize:10,color:"#444",fontWeight:600,letterSpacing:1,marginRight:4}}>WE ACCEPT:</span>
+                {[
+                  { Logo: BitcoinLogo, label:"BTC" },
+                  { Logo: UsdtLogo,    label:"USDT" },
+                  { Logo: MtnMomoLogo, label:"MTN MoMo" },
+                  { Logo: CardLogo,    label:"Card" },
+                ].map(({Logo:L,label})=>(
+                  <span key={label} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:10,fontWeight:600,padding:"4px 10px 4px 4px",borderRadius:8,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)",color:"#999"}}>
+                    <L size={22} /> {label}
+                  </span>
                 ))}
               </div>
 
               <div className="vb-hero-stats">
-                {[{val:"12,000+",label:"Winners"},{val:"$245K+",label:"Total Won"},{val:"80%+",label:"Win Rate"}].map(s=>(
-                  <div key={s.label}>
-                    <div className="vb-hero-stat-val" style={{color:s.label==="Win Rate"?"#D4AF37":"#F0F0F2"}}>{s.val}</div>
-                    <div className="vb-hero-stat-label">{s.label}</div>
-                  </div>
-                ))}
+                {(() => {
+                  const members = stats?.members;
+                  const totalWon = stats?.totalWon;
+                  const winRate = stats?.winRate;
+                  const items = [
+                    { val: members != null ? fNumber(members) + "+" : "Be the first", label: members != null ? "Members" : "Now in early access" },
+                    { val: totalWon != null ? "$" + fNumber(totalWon) + "+" : "—", label: totalWon != null ? "Verified Wins" : "Verified payouts coming" },
+                    { val: winRate != null ? winRate + "%" : "—", label: winRate != null ? "AI Win Rate" : "Tracking now" },
+                  ];
+                  return items.map(s => (
+                    <div key={s.label}>
+                      <div className="vb-hero-stat-val" style={{color:s.label==="AI Win Rate"?"#D4AF37":"#F0F0F2"}}>{s.val}</div>
+                      <div className="vb-hero-stat-label">{s.label}</div>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 
@@ -431,24 +460,30 @@ export default function App() {
             <p style={{textAlign:"center",color:"#555",fontSize:14,marginBottom:32,maxWidth:460,marginLeft:"auto",marginRight:"auto"}}>
               We accept Card payments, Cryptocurrency, and Mobile Money for seamless payments worldwide.
             </p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,maxWidth:800,margin:"0 auto"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:16,maxWidth:880,margin:"0 auto"}}>
+              {/* Bitcoin */}
+              <div style={{background:"linear-gradient(135deg,#12141A,#F7931A0C)",border:"1px solid #F7931A25",borderRadius:20,padding:24,textAlign:"center"}}>
+                <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}><BitcoinLogo size={44} /></div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:6,color:"#F7931A"}}>Bitcoin</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>Pay with BTC. Fast, borderless, and final.</div>
+              </div>
+              {/* USDT */}
+              <div style={{background:"linear-gradient(135deg,#12141A,#26A17B0C)",border:"1px solid #26A17B25",borderRadius:20,padding:24,textAlign:"center"}}>
+                <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}><UsdtLogo size={44} /></div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:6,color:"#26A17B"}}>USDT</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>Tether on TRC20 (low fees) or ERC20.</div>
+              </div>
+              {/* MTN MoMo */}
+              <div style={{background:"linear-gradient(135deg,#12141A,#FFCB050C)",border:"1px solid #FFCB0525",borderRadius:20,padding:24,textAlign:"center"}}>
+                <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}><MtnMomoLogo size={44} /></div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:6,color:"#FFCB05"}}>MTN MoMo</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>MTN Mobile Money — instant, available across Africa.</div>
+              </div>
               {/* Card */}
-              <div style={{background:"linear-gradient(135deg,#12141A,#15171F)",border:"1px solid #1E2028",borderRadius:20,padding:24,position:"relative",overflow:"hidden",textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:12}}>💳</div>
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:8}}>Card Payment</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>Visa, Mastercard, and more via Stripe or Paystack.</div>
-              </div>
-              {/* Crypto */}
-              <div style={{background:"linear-gradient(135deg,#12141A,#15171F)",border:"1px solid #F7931A20",borderRadius:20,padding:24,position:"relative",overflow:"hidden",textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:12}}>₿</div>
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:8}}>Cryptocurrency</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>USDT (TRC20/ERC20) and Bitcoin. Fast and borderless.</div>
-              </div>
-              {/* Mobile Money */}
-              <div style={{background:"linear-gradient(135deg,#12141A,#15171F)",border:"1px solid #1E2028",borderRadius:20,padding:24,position:"relative",overflow:"hidden",textAlign:"center"}}>
-                <div style={{fontSize:32,marginBottom:12}}>📱</div>
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:8}}>Mobile Money</div>
-                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>M-Pesa, MTN, Airtel Money, and more across Africa.</div>
+              <div style={{background:"linear-gradient(135deg,#12141A,#0B96350C)",border:"1px solid #0B963525",borderRadius:20,padding:24,textAlign:"center"}}>
+                <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}><CardLogo size={44} /></div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,letterSpacing:2,marginBottom:6,color:"#0B9635"}}>Card</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>Visa & Mastercard via Stripe or Paystack.</div>
               </div>
             </div>
           </div>
@@ -515,7 +550,7 @@ export default function App() {
           <div style={{ maxWidth:500, margin:"0 auto" }}>
             <h2>Stop Guessing.<br/><span style={{ color:"#D4AF37" }}>Win With Expert Predictions.</span></h2>
             <p style={{ color:"#555", fontSize:15, lineHeight:1.7, marginBottom:28 }}>
-              Expert analysis on EPL, La Liga, Serie A & Bundesliga. Real predictions, real results. Join 12,000+ winners worldwide.
+              Expert analysis on EPL, La Liga, Serie A & Bundesliga. AI-driven picks, real win-tracking, and full transparency on every round.
             </p>
             <a href="/signup"><button className="btn-p" style={{padding:"18px 52px",fontSize:17}}>Join BetGenius AI — $20</button></a>
           </div>
@@ -556,7 +591,9 @@ export default function App() {
               <a href="/terms" className="vb-footer-link">Terms of Service</a>
               <a href="/privacy" className="vb-footer-link">Privacy Policy</a>
               <a href="/terms#refund" className="vb-footer-link">Refund Policy</a>
-              <a href="/terms#responsible" className="vb-footer-link">Responsible Gaming</a>
+              <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="vb-footer-link">BeGambleAware ↗</a>
+              <a href="https://www.gamcare.org.uk" target="_blank" rel="noopener noreferrer" className="vb-footer-link">GamCare ↗</a>
+              <a href="https://www.gamblersanonymous.org" target="_blank" rel="noopener noreferrer" className="vb-footer-link">Gamblers Anonymous ↗</a>
             </div>
 
             <div>

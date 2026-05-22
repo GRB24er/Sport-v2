@@ -6,6 +6,7 @@ import User from "@/models/User";
 import ChatThread from "@/models/ChatThread";
 import Settings from "@/models/Settings";
 import { chatCompletion } from "@/lib/aiClient";
+import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,14 @@ export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Burst rate limit on top of the per-user daily cap — prevents a single
+    // user from hammering PayPerQ if they script the endpoint.
+    const ip = getClientIp(req);
+    const rl = rateLimit({ key: `chat:${session.user.id}:${ip}`, limit: 8, windowMs: 60 * 1000 });
+    if (!rl.ok) {
+      return rateLimitResponse(NextResponse, rl, "You're sending messages too fast. Slow down a bit.");
+    }
 
     await connectDB();
     const settings = await getSettings();
