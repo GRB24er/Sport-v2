@@ -263,7 +263,43 @@ export default function AdminDash() {
 
   const approve = async id => { await fetch("/api/users/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id})}); load(); };
   const reject = async id => { await fetch("/api/users/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id})}); load(); };
-  const remove = async id => { if(!confirm("Delete this user permanently? This cannot be undone.")) return; await fetch(`/api/users/${id}`,{method:"DELETE"}); setUserModal(null); load(); };
+  const remove = async (id, userName) => {
+    const label = userName ? `"${userName}"` : "this user";
+    if (!confirm(`Delete ${label} permanently? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(`Couldn't delete: ${data.error || `Server returned ${res.status}`}`);
+        return;
+      }
+      setUserModal(null);
+      await load();
+    } catch (e) {
+      alert(`Network error: ${e.message || "unknown"}`);
+    }
+  };
+
+  // Convenience: delete the three demo users that lib/seed.js inserts
+  const deleteDemoUsers = async () => {
+    const demos = users.filter(u =>
+      ["james@email.com","maria@email.com","ahmed@email.com"].includes((u.email || "").toLowerCase()) ||
+      ["James Wilson","Maria Santos","Ahmed Hassan"].includes(u.name)
+    );
+    if (demos.length === 0) { alert("No demo users found to delete."); return; }
+    if (!confirm(`Delete ${demos.length} demo user${demos.length===1?"":"s"} (${demos.map(d=>d.name).join(", ")})? This cannot be undone.`)) return;
+
+    let ok = 0, failed = [];
+    for (const u of demos) {
+      try {
+        const r = await fetch(`/api/users/${u._id}`, { method: "DELETE" });
+        if (r.ok) ok++; else failed.push(u.name);
+      } catch { failed.push(u.name); }
+    }
+    await load();
+    if (failed.length) alert(`Deleted ${ok}. Failed: ${failed.join(", ")}`);
+    else alert(`Deleted ${ok} demo user${ok===1?"":"s"}.`);
+  };
   const generateCode = async (userId) => {
     const res = await fetch("/api/referrals",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId})});
     const data = await res.json();
@@ -763,9 +799,14 @@ export default function AdminDash() {
           {tab==="users"&&(<div className="as">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:10}}>
               <h1 style={{...val,fontSize:28}}>All Users ({filtered.length})</h1>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["all","approved","pending","rejected","banned","blocked","suspended"].map(f=>{const cnt=f==="all"?users.length:users.filter(u=>u.status===f).length;if(cnt===0&&f!=="all"&&f!=="approved"&&f!=="pending") return null;return(
-                <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:filter===f?"1px solid #0B9635":"1px solid #1E2028",background:filter===f?"#0B9635":"transparent",color:filter===f?"#fff":"#555",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>{f} ({cnt})</button>
-              );})}</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                {users.some(u => ["james@email.com","maria@email.com","ahmed@email.com"].includes((u.email||"").toLowerCase())) && (
+                  <button onClick={deleteDemoUsers} style={{padding:"6px 12px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:"1px solid #E3172540",background:"#E3172512",color:"#E31725",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>🗑 Delete Demo Users</button>
+                )}
+                {["all","approved","pending","rejected","banned","blocked","suspended"].map(f=>{const cnt=f==="all"?users.length:users.filter(u=>u.status===f).length;if(cnt===0&&f!=="all"&&f!=="approved"&&f!=="pending") return null;return(
+                  <button key={f} onClick={()=>setFilter(f)} style={{padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:filter===f?"1px solid #0B9635":"1px solid #1E2028",background:filter===f?"#0B9635":"transparent",color:filter===f?"#fff":"#555",fontFamily:"'DM Sans'",letterSpacing:.5,textTransform:"uppercase"}}>{f} ({cnt})</button>
+                );})}
+              </div>
             </div>
             {/* Search bar */}
             <input placeholder="Search by name, phone, or email..." onChange={e=>{const q=e.target.value.toLowerCase();setFilter(prev=>{window._userSearch=q;return prev})}} style={{width:"100%",padding:"12px 16px",background:"#0B0D10",border:"1px solid #1E2028",borderRadius:10,color:"#F0F0F2",fontSize:13,fontFamily:"'DM Sans'",outline:"none",marginBottom:14}} />
@@ -784,7 +825,9 @@ export default function AdminDash() {
                     <td style={{padding:"10px 8px",fontSize:11,color:"#444"}}>{tAgo(u.createdAt)}</td>
                     <td style={{padding:"10px 8px"}}><div style={{display:"flex",gap:4}}>
                       {u.status==="pending"&&<button onClick={e=>{e.stopPropagation();approve(u._id)}} style={btn("#0B9635")}>Approve</button>}
-                      <button onClick={e=>{e.stopPropagation();remove(u._id)}} style={btn("#076B25")}>Delete</button>
+                      {u.role !== "admin" && session?.user?.id !== u._id && (
+                        <button onClick={e=>{e.stopPropagation();remove(u._id, u.name)}} style={btn("#E31725")}>Delete</button>
+                      )}
                     </div></td>
                   </tr>
                 )})}</tbody>
@@ -1411,7 +1454,9 @@ export default function AdminDash() {
               {(u.status==="approved"||u.status==="pending")&&<button onClick={async()=>{if(!confirm("Block this user temporarily?"))return;await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"blocked"})});setUserModal(null);load()}} style={{...btn("#D4AF37","#000"),padding:12,fontSize:12}}>🔒 Block</button>}
               {(u.status==="approved"||u.status==="pending")&&<button onClick={async()=>{if(!confirm("Suspend this user?"))return;await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"suspended"})});setUserModal(null);load()}} style={{...btn("#94A7BD","#000"),padding:12,fontSize:12}}>⏸ Suspend</button>}
               {(u.status==="banned"||u.status==="blocked"||u.status==="suspended")&&<button onClick={async()=>{await fetch(`/api/users/${u._id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"approved"})});setUserModal(null);load()}} style={{...btn("#0B9635"),flex:1,padding:12,fontSize:12}}>✓ Unblock / Reactivate</button>}
-              <button onClick={()=>remove(u._id)} style={{...btn("#076B25"),padding:12,fontSize:12}}>🗑 Delete</button>
+              {u.role !== "admin" && session?.user?.id !== u._id && (
+                <button onClick={()=>remove(u._id, u.name)} style={{...btn("#E31725"),padding:12,fontSize:12}}>🗑 Delete</button>
+              )}
             </div>
           </div>
         </div>

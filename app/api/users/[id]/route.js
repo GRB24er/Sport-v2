@@ -38,13 +38,35 @@ export async function DELETE(req, { params }) {
     if (!session || session.user.role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDB();
-    const user = await User.findByIdAndDelete(params.id);
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    // Safety: admin cannot delete themselves (would lock them out)
+    if (session.user.id === params.id) {
+      return NextResponse.json({ error: "You can't delete your own admin account." }, { status: 400 });
+    }
+
+    const target = await User.findById(params.id).select("role name");
+    if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // Safety: don't delete the last admin
+    if (target.role === "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount <= 1) {
+        return NextResponse.json({ error: "Can't delete the last admin account." }, { status: 400 });
+      }
+    }
+
+    await User.findByIdAndDelete(params.id);
     await Prediction.deleteMany({ userId: params.id });
     await Notification.deleteMany({ $or: [{ relatedUserId: params.id }, { forUserId: params.id }] });
 
-    return NextResponse.json({ message: "User deleted" });
+    // Invalidate the 30s dashboard cache so the freshly-deleted user
+    // doesn't keep reappearing in the admin list for half a minute.
+    try {
+      const mod = await import("@/app/api/admin/dashboard/route");
+      if (typeof mod.invalidateDashboardCache === "function") mod.invalidateDashboardCache();
+    } catch {}
+
+    return NextResponse.json({ message: `Deleted ${target.name}` });
   } catch (error) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
