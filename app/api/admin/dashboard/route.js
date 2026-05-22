@@ -29,6 +29,13 @@ let dashCache = null;
 let dashCacheTime = 0;
 const CACHE_TTL = 30 * 1000;
 
+// Exported so mutating routes (delete user, approve/reject, etc.) can
+// drop stale data immediately instead of waiting out the 30s TTL.
+export function invalidateDashboardCache() {
+  dashCache = null;
+  dashCacheTime = 0;
+}
+
 // Single consolidated endpoint — replaces 9 separate API calls
 // One cold start, one DB connection, one session check, all queries in parallel
 export async function GET() {
