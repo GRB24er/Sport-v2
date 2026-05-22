@@ -34,7 +34,8 @@ export default function SignupPage() {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/settings")
+    // Always pull fresh — admins update payment settings live, we never want a stale view here.
+    fetch("/api/admin/settings", { cache: "no-store" })
       .then(r => r.json())
       .then(d => { if (d.settings) setSs(d.settings); })
       .catch(() => {})
@@ -344,14 +345,32 @@ export default function SignupPage() {
                     </div>
                   ))
                 ) : PROVS.length === 0 ? (
-                  // Admin hasn't configured any payment methods yet
-                  <div style={{background:"rgba(212,175,55,0.05)",border:"1px solid rgba(212,175,55,0.25)",borderRadius:14,padding:"20px 18px",textAlign:"center"}}>
-                    <div style={{fontSize:32,marginBottom:10}}>⚙️</div>
-                    <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#D4AF37",marginBottom:6}}>PAYMENT METHODS COMING SOON</div>
-                    <div style={{fontSize:12,color:"#888",lineHeight:1.6,marginBottom:12}}>
-                      The team is configuring payment options. Please check back shortly, or message support if this looks wrong.
+                  // Admin hasn't configured any payment methods yet.
+                  // Show a diagnostic view that explains exactly which fields the API
+                  // returned empty, so the admin can self-fix instead of guessing.
+                  <div style={{background:"rgba(212,175,55,0.05)",border:"1px solid rgba(212,175,55,0.25)",borderRadius:14,padding:"20px 18px"}}>
+                    <div style={{fontSize:32,marginBottom:10,textAlign:"center"}}>⚙️</div>
+                    <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#D4AF37",marginBottom:6,textAlign:"center"}}>PAYMENT METHODS COMING SOON</div>
+                    <div style={{fontSize:12,color:"#888",lineHeight:1.6,marginBottom:12,textAlign:"center"}}>
+                      The team is configuring payment options. Please check back shortly, or message support.
                     </div>
-                    <a href="mailto:support@betgenius.ai" style={{color:"#0B9635",fontSize:12,fontWeight:700,textDecoration:"none"}}>support@betgenius.ai →</a>
+                    <div style={{textAlign:"center",marginBottom:14}}>
+                      <a href={`mailto:${s.supportEmail || "support@betgenius.ai"}`} style={{color:"#0B9635",fontSize:12,fontWeight:700,textDecoration:"none"}}>{s.supportEmail || "support@betgenius.ai"} →</a>
+                    </div>
+                    {/* Diagnostic — only shown if the user fetched the admin view of settings */}
+                    <details style={{marginTop:12,fontSize:11,color:"#666",borderTop:"1px solid #1E2028",paddingTop:10}}>
+                      <summary style={{cursor:"pointer",color:"#888",fontWeight:600,marginBottom:6}}>Admin: see what's missing</summary>
+                      <div style={{fontFamily:"monospace",fontSize:10,lineHeight:1.7,paddingLeft:8}}>
+                        <div>cryptoEnabled: <code style={{color:s.cryptoEnabled !== false ? "#0B9635" : "#E31725"}}>{String(s.cryptoEnabled !== false)}</code></div>
+                        <div>usdtTrc20Address: <code style={{color:s.usdtTrc20Address ? "#0B9635" : "#E31725"}}>{s.usdtTrc20Address ? "set" : "empty"}</code></div>
+                        <div>usdtErc20Address: <code style={{color:s.usdtErc20Address ? "#0B9635" : "#666"}}>{s.usdtErc20Address ? "set" : "empty (optional)"}</code></div>
+                        <div>btcAddress: <code style={{color:s.btcAddress ? "#0B9635" : "#E31725"}}>{s.btcAddress ? "set" : "empty"}</code></div>
+                        <div>merchantMomoNumber: <code style={{color:s.merchantMomoNumber ? "#0B9635" : "#E31725"}}>{s.merchantMomoNumber || "empty"}</code></div>
+                        <div>merchantMomoName: <code style={{color:s.merchantMomoName ? "#0B9635" : "#666"}}>{s.merchantMomoName || "empty"}</code></div>
+                        <div>momoProviders: <code style={{color:Array.isArray(s.momoProviders) && s.momoProviders.length ? "#0B9635" : "#666"}}>{Array.isArray(s.momoProviders) ? `${s.momoProviders.length} item(s)` : "missing"}</code></div>
+                        <div style={{marginTop:8,color:"#D4AF37"}}>↳ Fix in admin → Settings, then hard-refresh this page (Cmd+Shift+R).</div>
+                      </div>
+                    </details>
                   </div>
                 ) : (
                   PROVS.map((p,i)=>(

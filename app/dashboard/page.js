@@ -74,7 +74,7 @@ export default function Dashboard() {
     try {
       const [uRes, sRes, nRes, stRes] = await Promise.all([
         fetch(`/api/users/${session.user.id}`),
-        fetch("/api/admin/settings"),
+        fetch("/api/admin/settings", { cache: "no-store" }),
         fetch("/api/notifications"),
         fetch(`/api/users/${session.user.id}/stats`),
       ]);
