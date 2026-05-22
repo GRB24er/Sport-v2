@@ -31,8 +31,15 @@ export default function SignupPage() {
   const [proofUrl, setProofUrl] = useState("");
   const [proofPreview, setProofPreview] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  useEffect(() => { fetch("/api/admin/settings").then(r=>r.json()).then(d=>{if(d.settings)setSs(d.settings)}).catch(()=>{}); }, []);
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then(r => r.json())
+      .then(d => { if (d.settings) setSs(d.settings); })
+      .catch(() => {})
+      .finally(() => setSettingsLoaded(true));
+  }, []);
 
   const s = ss || {};
   const FEE = s.signupFee || DEF_FEE;
@@ -174,7 +181,7 @@ export default function SignupPage() {
 .su-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#444;margin-bottom:6px}
 .su-inp{width:100%;padding:14px 16px;background:rgba(11,13,16,.6);border:1px solid #1E2028;border-radius:12px;color:#F0F0F2;font-size:14px;font-family:'DM Sans';outline:none;transition:all .2s}.su-inp:focus{border-color:#0B9635;box-shadow:0 0 0 3px rgba(227,23,37,.08)}.su-inp::placeholder{color:#2A2D34}
 .su-pw{position:relative}.su-pw .su-inp{padding-right:56px}.su-pw-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:12px;font-family:'DM Sans';font-weight:600}
-.su-err{background:rgba(227,23,37,.06);border:1px solid rgba(227,23,37,.15);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0B9635;font-weight:600;display:flex;align-items:center;gap:8px}
+.su-err{background:rgba(227,23,37,.08);border:1px solid rgba(227,23,37,.25);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#E31725;font-weight:600;display:flex;align-items:center;gap:8px}
 .su-btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans';transition:all .2s;position:relative;overflow:hidden}
 .su-btn:disabled{opacity:.4;cursor:not-allowed}.su-btn:active{transform:scale(.98)}
 .su-btn-r{background:#0B9635;color:#fff}.su-btn-r:hover:not(:disabled){box-shadow:0 8px 30px rgba(227,23,37,.3);transform:translateY(-1px)}
@@ -258,26 +265,37 @@ export default function SignupPage() {
                 <div className="su-field fu fu4"><label className="su-lbl">Confirm Password</label><input className="su-inp" type="password" placeholder="Re-enter password" value={form.confirm} onChange={e=>upd("confirm",e.target.value)} /></div>
                 <div className="su-field fu fu5"><label className="su-lbl">Referral Code (Optional)</label><input className="su-inp" placeholder="e.g. BG-XXXX" value={form.referral} onChange={e=>upd("referral",e.target.value)} /></div>
 
-                {/* 18+ AGE GATE + TERMS — required by law in most jurisdictions */}
-                <div className="fu fu5" style={{display:"flex",flexDirection:"column",gap:10,padding:"14px 16px",background:"rgba(11,13,16,0.5)",border:"1px solid #1E2028",borderRadius:12,marginBottom:14}}>
-                  <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",fontSize:13,color:"#bbb",lineHeight:1.5}}>
+                {/* 18+ AGE GATE + TERMS — required by law in most jurisdictions.
+                    Using explicit id + htmlFor (instead of wrapping the text in a <label>)
+                    so the Terms/Privacy links don't accidentally toggle the checkbox. */}
+                <div className="fu fu5" style={{display:"flex",flexDirection:"column",gap:12,padding:"14px 16px",background:"rgba(11,13,16,0.5)",border:"1px solid #1E2028",borderRadius:12,marginBottom:14}}>
+                  <div style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:13,color:"#bbb",lineHeight:1.5}}>
                     <input
+                      id="su-adult"
                       type="checkbox"
                       checked={confirmedAdult}
                       onChange={e=>setConfirmedAdult(e.target.checked)}
                       style={{marginTop:3,width:18,height:18,accentColor:"#0B9635",cursor:"pointer",flexShrink:0}}
                     />
-                    <span><strong style={{color:"#F0F0F2"}}>I confirm I am 18 years or older</strong> and that gambling/sports prediction services are legal in my jurisdiction.</span>
-                  </label>
-                  <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",fontSize:13,color:"#bbb",lineHeight:1.5}}>
+                    <label htmlFor="su-adult" style={{cursor:"pointer"}}>
+                      <strong style={{color:"#F0F0F2"}}>I confirm I am 18 years or older</strong> and that sports prediction services are legal in my jurisdiction.
+                    </label>
+                  </div>
+                  <div style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:13,color:"#bbb",lineHeight:1.5}}>
                     <input
+                      id="su-terms"
                       type="checkbox"
                       checked={acceptedTerms}
                       onChange={e=>setAcceptedTerms(e.target.checked)}
                       style={{marginTop:3,width:18,height:18,accentColor:"#0B9635",cursor:"pointer",flexShrink:0}}
                     />
-                    <span>I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Privacy Policy</a>.</span>
-                  </label>
+                    <label htmlFor="su-terms" style={{cursor:"pointer"}}>
+                      I have read and agree to the{" "}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Terms of Service</a>
+                      {" "}and{" "}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:"#0B9635",textDecoration:"none",fontWeight:600}}>Privacy Policy</a>.
+                    </label>
+                  </div>
                   <div style={{fontSize:11,color:"#555",lineHeight:1.5,paddingTop:6,borderTop:"1px solid #1E2028"}}>
                     ⚠️ Sports betting involves risk. Never wager more than you can afford to lose.{" "}
                     <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{color:"#D4AF37"}}>Get help if gambling is a problem.</a>
@@ -297,16 +315,39 @@ export default function SignupPage() {
               <div className="su-fee"><span className="su-fee-a">${FEE}</span><span className="su-fee-u">USD</span></div>
 
               <div className="pv-grid">
-                {PROVS.map((p,i)=>(
-                  <div key={p.id} className={`pv-card fu fu${i+1} ${provider===p.id?"on":""}`} onClick={()=>setProvider(p.id)} style={{borderColor:provider===p.id?p.color:"transparent",background:provider===p.id?p.color+"0F":"rgba(11,13,16,.5)"}}>
-                    <div className="pv-dot" style={{background:p.bg}}>{p.icon}</div>
-                    <div className="pv-info">
-                      <div className="pv-name" style={{color:provider===p.id?p.color:"#F0F0F2"}}>{p.name}</div>
-                      <div className="pv-num">{p.type==="momo"?p.num:`${p.network} • ${p.feeNote}`}</div>
+                {!settingsLoaded ? (
+                  // Skeleton while settings are loading
+                  [0,1,2].map(i=>(
+                    <div key={i} className="pv-card" style={{opacity:0.5}}>
+                      <div className="pv-dot" style={{background:"#1A1D22"}} />
+                      <div className="pv-info">
+                        <div style={{height:14,width:120,background:"#1A1D22",borderRadius:4,marginBottom:6}} />
+                        <div style={{height:11,width:80,background:"#1A1D22",borderRadius:4}} />
+                      </div>
                     </div>
-                    <div className="pv-check" style={{borderColor:provider===p.id?p.color:"#333",background:provider===p.id?p.color:"transparent",color:provider===p.id?"#0B0D10":"transparent"}}>✓</div>
+                  ))
+                ) : PROVS.length === 0 ? (
+                  // Admin hasn't configured any payment methods yet
+                  <div style={{background:"rgba(212,175,55,0.05)",border:"1px solid rgba(212,175,55,0.25)",borderRadius:14,padding:"20px 18px",textAlign:"center"}}>
+                    <div style={{fontSize:32,marginBottom:10}}>⚙️</div>
+                    <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#D4AF37",marginBottom:6}}>PAYMENT METHODS COMING SOON</div>
+                    <div style={{fontSize:12,color:"#888",lineHeight:1.6,marginBottom:12}}>
+                      The team is configuring payment options. Please check back shortly, or message support if this looks wrong.
+                    </div>
+                    <a href="mailto:support@betgenius.ai" style={{color:"#0B9635",fontSize:12,fontWeight:700,textDecoration:"none"}}>support@betgenius.ai →</a>
                   </div>
-                ))}
+                ) : (
+                  PROVS.map((p,i)=>(
+                    <div key={p.id} className={`pv-card fu fu${i+1} ${provider===p.id?"on":""}`} onClick={()=>setProvider(p.id)} style={{borderColor:provider===p.id?p.color:"transparent",background:provider===p.id?p.color+"0F":"rgba(11,13,16,.5)"}}>
+                      <div className="pv-dot" style={{background:p.bg}}>{p.icon}</div>
+                      <div className="pv-info">
+                        <div className="pv-name" style={{color:provider===p.id?p.color:"#F0F0F2"}}>{p.name}</div>
+                        <div className="pv-num">{p.type==="momo"?p.num:`${p.network} • ${p.feeNote}`}</div>
+                      </div>
+                      <div className="pv-check" style={{borderColor:provider===p.id?p.color:"#333",background:provider===p.id?p.color:"transparent",color:provider===p.id?"#0B0D10":"transparent"}}>✓</div>
+                    </div>
+                  ))
+                )}
               </div>
 
               {err&&<div className="su-err">⚠ {err}</div>}
@@ -314,7 +355,7 @@ export default function SignupPage() {
                 <button className="su-btn su-btn-o" onClick={()=>{setErr("");setStep(1)}}>Back</button>
                 <button className="su-btn su-btn-g" disabled={!pv} onClick={()=>{setErr("");setStep(3)}}>Continue →</button>
               </div>
-              {!pv&&<div style={{textAlign:"center",marginTop:10,fontSize:12,color:"#333"}}>Select a provider to continue</div>}
+              {settingsLoaded && PROVS.length > 0 && !pv && <div style={{textAlign:"center",marginTop:10,fontSize:12,color:"#555"}}>Select a payment method to continue</div>}
             </div>)}
 
             {/* ═══ STEP 3 — PAY & SUBMIT ═══ */}

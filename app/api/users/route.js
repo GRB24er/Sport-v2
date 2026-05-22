@@ -13,12 +13,14 @@ const SIGNUP_FEE_DEF = 20;
 // POST — Register
 export async function POST(req) {
   try {
-    // Rate-limit signups by IP — 5 per 10 min is plenty for legit use,
-    // tight enough to slow down scripted account creation.
+    // Rate-limit signups by IP — 20 attempts per 10 min is loose enough for
+    // legitimate retries (poor network, password mistakes, CGNAT-shared IPs
+    // which are common in Africa) but tight enough to slow scripted abuse.
+    // The limiter auto-skips when IP is unknown / in dev / on localhost.
     const ip = getClientIp(req);
-    const rl = rateLimit({ key: `signup:${ip}`, limit: 5, windowMs: 10 * 60 * 1000 });
+    const rl = rateLimit({ key: ip ? `signup:${ip}` : null, limit: 20, windowMs: 10 * 60 * 1000 });
     if (!rl.ok) {
-      return rateLimitResponse(NextResponse, rl, "Too many signup attempts. Try again in a few minutes.");
+      return rateLimitResponse(NextResponse, rl, "Too many signup attempts from your network. Try again in a few minutes.");
     }
 
     await connectDB();
@@ -31,10 +33,10 @@ export async function POST(req) {
     if (password.length < 6) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
-    if (!confirmedAdult) {
-      return NextResponse.json({ error: "You must confirm you are 18+ to register" }, { status: 400 });
+    if (confirmedAdult !== true) {
+      return NextResponse.json({ error: "You must confirm you are 18 or older to register" }, { status: 400 });
     }
-    if (!acceptedTerms) {
+    if (acceptedTerms !== true) {
       return NextResponse.json({ error: "You must accept the Terms of Service and Privacy Policy" }, { status: 400 });
     }
 
