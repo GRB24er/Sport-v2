@@ -44,19 +44,36 @@ export default function SignupPage() {
   const s = ss || {};
   const FEE = s.signupFee || DEF_FEE;
 
-  // Build MoMo providers from settings
-  const momoEnabled = s.momoEnabled || false;
-  const MOMO_PROVS = momoEnabled && Array.isArray(s.momoProviders) ? s.momoProviders.filter(p => p.enabled !== false).map(p => ({
-    id: p.id || "momo_" + p.name?.toLowerCase().replace(/\s/g,"_"),
-    name: p.name,
-    num: p.number,
-    acct: p.accountName || "BetGenius AI",
-    color: p.color || "#0B9635",
-    bg: `linear-gradient(135deg,${p.color || "#0B9635"},${p.color || "#0B9635"}cc)`,
-    icon: "📱",
-    type: "momo",
-    steps: ["Send the exact amount to the number shown below", "Use the account name as reference", "Copy your transaction reference/ID", "Paste it in the reference field below"],
-  })) : [];
+  // Build MoMo providers from settings.
+  // Single "Merchant MoMo" entry wins if set (one number across all networks);
+  // otherwise fall back to per-wallet entries in momoProviders[].
+  const momoEnabled = s.momoEnabled || !!s.merchantMomoNumber;
+  let MOMO_PROVS = [];
+  if (s.merchantMomoNumber) {
+    MOMO_PROVS = [{
+      id: "momo_merchant",
+      name: s.merchantMomoName || "Mobile Money",
+      num: s.merchantMomoNumber,
+      acct: s.merchantMomoName || "Mobile Money",
+      color: "#FFCB05",
+      bg: "linear-gradient(135deg,#FFCB05,#E0B504)",
+      icon: "📱",
+      type: "momo",
+      steps: ["Send the exact amount to the number shown below", "Use the account name as reference", "Copy your transaction reference/ID", "Paste it in the reference field below"],
+    }];
+  } else if (momoEnabled && Array.isArray(s.momoProviders)) {
+    MOMO_PROVS = s.momoProviders.filter(p => p.enabled !== false).map(p => ({
+      id: p.id || "momo_" + p.name?.toLowerCase().replace(/\s/g,"_"),
+      name: p.name,
+      num: p.number,
+      acct: p.accountName || "BetGenius AI",
+      color: p.color || "#0B9635",
+      bg: `linear-gradient(135deg,${p.color || "#0B9635"},${p.color || "#0B9635"}cc)`,
+      icon: "📱",
+      type: "momo",
+      steps: ["Send the exact amount to the number shown below", "Use the account name as reference", "Copy your transaction reference/ID", "Paste it in the reference field below"],
+    }));
+  }
 
   // Build crypto providers from settings
   const cryptoEnabled = s.cryptoEnabled !== false;

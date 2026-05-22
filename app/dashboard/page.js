@@ -108,13 +108,27 @@ export default function Dashboard() {
   PKGS[1].features = [`${PKGS[1].max} Rounds`, `${PKGS[1].odds} Range`, "EPL, La Liga, Serie A, Bundesliga", "Priority Support"];
   PKGS[2].features = [`${PKGS[2].max} Rounds`, `${PKGS[2].odds}`, "High Odds from Our Sources", "24/7 VIP Support"];
 
-  // MoMo providers
-  const momoEnabled = ss.momoEnabled || false;
-  const MOMO_PROVS = momoEnabled && Array.isArray(ss.momoProviders) ? ss.momoProviders.filter(p => p.enabled !== false).map(p => ({
-    id: p.id || "momo_" + p.name?.toLowerCase().replace(/\s/g,"_"),
-    name: p.name, num: p.number, acct: p.accountName || "BetGenius AI",
-    color: p.color || "#0B9635", refLabel: "TRANSACTION REFERENCE", refPlaceholder: "e.g. TXN-123456", type: "momo",
-  })) : [];
+  // MoMo providers — Merchant override wins, else per-wallet list
+  const momoEnabled = ss.momoEnabled || !!ss.merchantMomoNumber;
+  let MOMO_PROVS = [];
+  if (ss.merchantMomoNumber) {
+    MOMO_PROVS = [{
+      id: "momo_merchant",
+      name: ss.merchantMomoName || "Mobile Money",
+      num: ss.merchantMomoNumber,
+      acct: ss.merchantMomoName || "Mobile Money",
+      color: "#FFCB05",
+      refLabel: "TRANSACTION REFERENCE",
+      refPlaceholder: "e.g. TXN-123456",
+      type: "momo",
+    }];
+  } else if (momoEnabled && Array.isArray(ss.momoProviders)) {
+    MOMO_PROVS = ss.momoProviders.filter(p => p.enabled !== false).map(p => ({
+      id: p.id || "momo_" + p.name?.toLowerCase().replace(/\s/g,"_"),
+      name: p.name, num: p.number, acct: p.accountName || "BetGenius AI",
+      color: p.color || "#0B9635", refLabel: "TRANSACTION REFERENCE", refPlaceholder: "e.g. TXN-123456", type: "momo",
+    }));
+  }
   const cryptoEnabled = ss.cryptoEnabled !== false;
   const CRYPTO_PROVS = !cryptoEnabled ? [] : [
     ss.usdtTrc20Address ? { ...DEF_CRYPTO_PROVS[0], address: ss.usdtTrc20Address } : null,

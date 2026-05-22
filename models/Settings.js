@@ -21,6 +21,10 @@ const settingsSchema = new mongoose.Schema({
   // Mobile Money — Generic configurable providers
   momoEnabled: { type: Boolean, default: false },
   momoProviders: { type: [momoProviderSchema], default: [] },
+  // Mobile Money — Single merchant override (one number across all networks).
+  // If set, it takes priority over the per-network momoProviders entries.
+  merchantMomoNumber: { type: String, default: "" },
+  merchantMomoName: { type: String, default: "" },
   // Crypto Wallets
   usdtTrc20Address: { type: String, default: "" },
   usdtErc20Address: { type: String, default: "" },

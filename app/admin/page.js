@@ -383,18 +383,41 @@ export default function AdminDash() {
     // Build momoProviders array from flat fields
     const sf = { ...settingsForm };
     const momoProviders = [];
+    const dropped = [];
     for (let i = 1; i <= 3; i++) {
-      const name = sf[`momoProvider${i}Name`];
-      const number = sf[`momoProvider${i}Number`];
-      if (name && number) {
-        momoProviders.push({ id: `momo_${name.toLowerCase().replace(/\s/g,"_")}`, name, number, accountName: sf[`momoProvider${i}Account`] || "", color: "#0B9635", enabled: true });
+      const name = (sf[`momoProvider${i}Name`] || "").trim();
+      const number = (sf[`momoProvider${i}Number`] || "").trim();
+      const accountName = (sf[`momoProvider${i}Account`] || "").trim();
+      if (number && !name) {
+        // Don't silently drop the user's data — flag it so we can warn them.
+        dropped.push(`Wallet ${i}: provider name is empty (number ${number})`);
       }
-      delete sf[`momoProvider${i}Name`]; delete sf[`momoProvider${i}Number`]; delete sf[`momoProvider${i}Account`];
+      if (name && number) {
+        momoProviders.push({
+          id: `momo_${name.toLowerCase().replace(/\s/g,"_")}`,
+          name, number, accountName, color: "#0B9635", enabled: true,
+        });
+      }
+      delete sf[`momoProvider${i}Name`];
+      delete sf[`momoProvider${i}Number`];
+      delete sf[`momoProvider${i}Account`];
     }
     sf.momoProviders = momoProviders;
-    sf.momoEnabled = momoProviders.length > 0;
+    // momoEnabled is true if EITHER merchant number OR per-wallet providers are set
+    sf.momoEnabled = momoProviders.length > 0 || !!(sf.merchantMomoNumber || "").trim();
+
+    if (dropped.length) {
+      const proceed = confirm(`The following entries can't be saved because their provider name is empty:\n\n${dropped.join("\n")}\n\nFill in the name field and click Save again. Continue saving the rest?`);
+      if (!proceed) { setSaving(false); return; }
+    }
+
     const res = await fetch("/api/admin/settings",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(sf)});
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(`Save failed: ${data.error || res.status}`);
+      setSaving(false);
+      return;
+    }
     if(data.settings) { setSettings(data.settings);
       const sf2 = { ...data.settings }; const mp2 = sf2.momoProviders || [];
       for (let i = 0; i < 3; i++) { sf2[`momoProvider${i+1}Name`] = mp2[i]?.name || ""; sf2[`momoProvider${i+1}Number`] = mp2[i]?.number || ""; sf2[`momoProvider${i+1}Account`] = mp2[i]?.accountName || ""; }
