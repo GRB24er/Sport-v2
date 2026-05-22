@@ -51,6 +51,8 @@ export default function AdminDash() {
   const [uploadsWithImages,setUploadsWithImages] = useState(null);
   const [loadingImages,setLoadingImages] = useState(false);
   const [analytics,setAnalytics] = useState(null);
+  const [loadError,setLoadError] = useState(null);
+  const [health,setHealth] = useState(null);
 
   useEffect(() => {
     if(status==="unauthenticated") router.push("/login");
@@ -60,33 +62,54 @@ export default function AdminDash() {
   // Single consolidated fetch — 1 serverless cold start instead of 9
   const load = async () => {
     setRefreshing(true);
+    setLoadError(null);
     try {
       const res = await fetch("/api/admin/dashboard");
-      const d = await res.json();
-      if (d.error) { console.error("Dashboard load error:", d.error); setRefreshing(false); return; }
+      const d = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (!res.ok || d.error) {
+        // Don't fail silently — show the admin what's actually wrong.
+        console.error("Dashboard load error:", d.error || res.status);
+        setLoadError(d.error || `Server returned ${res.status}`);
+        setDataLoaded(true);
+        setRefreshing(false);
+        // Probe health so we can show a specific reason
+        fetch("/api/admin/health").then(r => r.json()).then(setHealth).catch(() => {});
+        return;
+      }
       setUsers(d.users||[]);
       setPreds(d.rounds||[]);
       setUploads(d.uploads||[]);
       setNotifs(d.notifications||[]);
       setRefData(d.referralData||{ usersWithCodes:[], allReferred:[], stats:{} });
-      if(d.settings) { setSettings(d.settings); if(!settingsForm) {
-        // Unpack momoProviders array into flat fields for the form
+      // Always sync the form with the server (re-unpack momoProviders each time)
+      // so saves don't drift from the DB and so it never sits null.
+      if (d.settings) {
+        setSettings(d.settings);
         const sf = { ...d.settings };
-        const mp = sf.momoProviders || [];
+        const mp = Array.isArray(sf.momoProviders) ? sf.momoProviders : [];
         for (let i = 0; i < 3; i++) {
-          sf[`momoProvider${i+1}Name`] = mp[i]?.name || "";
-          sf[`momoProvider${i+1}Number`] = mp[i]?.number || "";
+          sf[`momoProvider${i+1}Name`]    = mp[i]?.name || "";
+          sf[`momoProvider${i+1}Number`]  = mp[i]?.number || "";
           sf[`momoProvider${i+1}Account`] = mp[i]?.accountName || "";
         }
-        setSettingsForm(sf);
-      } }
+        setSettingsForm(prev => prev ? { ...prev, ...sf } : sf);
+      } else if (!settingsForm) {
+        // Settings doc doesn't exist yet — let the user fill in an empty form
+        setSettingsForm({});
+      }
       setBroadcasts(d.broadcasts||[]);
       setSupportThreads(d.support?.threads||[]);
       setSupportUnread(d.support?.totalUnread||0);
       setPkgRequests(d.packageRequests||[]);
       setDataLoaded(true);
       setUploadsWithImages(null); // Clear image cache so it refetches when tab is opened
-    } catch(e) { console.error("Load error",e); }
+      // Refresh health silently in the background
+      fetch("/api/admin/health").then(r => r.json()).then(setHealth).catch(() => {});
+    } catch (e) {
+      console.error("Load error", e);
+      setLoadError(e.message || "Network error");
+      setDataLoaded(true);
+    }
     setRefreshing(false);
   };
 
@@ -420,11 +443,60 @@ export default function AdminDash() {
           <span style={{fontSize:10,fontWeight:700,letterSpacing:1.5,padding:"4px 12px",borderRadius:8,background:"#0B963518",color:"#0B9635"}}>ADMIN</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {/* DB health dot — green = ok, amber = unknown, red = down */}
+          <div
+            title={health?.ok ? "Database connected" : (health?.message || "Database status unknown")}
+            style={{
+              display:"flex", alignItems:"center", gap:6,
+              padding:"4px 10px", borderRadius:8,
+              background: health == null ? "#1E2028" : health.ok ? "#0B963518" : "#E3172518",
+              border: `1px solid ${health == null ? "#1E2028" : health.ok ? "#0B963540" : "#E3172540"}`,
+              fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase",
+              color: health == null ? "#666" : health.ok ? "#0B9635" : "#E31725",
+            }}
+          >
+            <span style={{
+              width:7, height:7, borderRadius:"50%",
+              background: health == null ? "#666" : health.ok ? "#0B9635" : "#E31725",
+              boxShadow: health?.ok ? "0 0 6px #0B9635" : "none",
+            }} />
+            DB {health == null ? "…" : health.ok ? "OK" : "DOWN"}
+          </div>
           <button onClick={load} disabled={refreshing} style={{...btn("#151820","#888"),opacity:refreshing?.5:1}}>{refreshing?"⟳":"↻"} Refresh</button>
           <div style={{position:"relative",cursor:"pointer"}} onClick={()=>setTab("notifs")}><span style={{fontSize:18}}>🔔</span>{unread>0&&<span style={{position:"absolute",top:-4,right:-6,background:"#0B9635",color:"#fff",fontSize:8,fontWeight:800,width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>{unread}</span>}</div>
           <button onClick={()=>signOut({callbackUrl:"/"})} style={{...btn("transparent","#555"),border:"1px solid #1E2028"}}>Logout</button>
         </div>
       </header>
+
+      {/* GLOBAL ERROR BANNER — visible when /api/admin/dashboard fails */}
+      {loadError && (
+        <div style={{
+          background:"rgba(227,23,37,0.08)", borderBottom:"1px solid rgba(227,23,37,0.3)",
+          padding:"12px 24px", display:"flex", alignItems:"flex-start", gap:12, flexWrap:"wrap", position:"relative", zIndex:5,
+        }}>
+          <span style={{fontSize:18, lineHeight:1, marginTop:1}}>⚠️</span>
+          <div style={{flex:1, minWidth:260}}>
+            <div style={{fontWeight:700, fontSize:13, color:"#E31725", marginBottom:4}}>
+              Dashboard data failed to load
+            </div>
+            <div style={{fontSize:12, color:"#888", lineHeight:1.5}}>
+              {health?.message ? (
+                <>
+                  <strong style={{color:"#F0F0F2"}}>{health.reason}:</strong> {health.message}
+                </>
+              ) : (
+                <>Server returned: <code style={{color:"#E31725",fontFamily:"monospace"}}>{loadError}</code></>
+              )}
+              {health?.reason === "DB_AUTH_FAILED" && (
+                <div style={{marginTop:6,padding:"8px 10px",background:"#0B0D10",borderRadius:6,fontSize:11,fontFamily:"monospace",color:"#aaa"}}>
+                  Fix: open your env vars (Vercel → Settings → Environment Variables) and replace MONGODB_URI with a working connection string from MongoDB Atlas → Database → Connect → Drivers.
+                </div>
+              )}
+            </div>
+            <button onClick={load} disabled={refreshing} style={{...btn("#E31725"), marginTop:8, padding:"6px 14px", fontSize:11}}>Retry</button>
+          </div>
+        </div>
+      )}
 
       <div style={{display:"flex",position:"relative",zIndex:1,minHeight:"calc(100vh - 53px)"}}>
         <div className={`aover ${sidebar?"show":""}`} onClick={()=>setSidebar(false)} />
@@ -847,8 +919,27 @@ export default function AdminDash() {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
               <div><h1 style={{...val,fontSize:28}}>Prediction Rounds ({preds.length})</h1><p style={{fontSize:12,color:"#444"}}>{preds.filter(r=>r.status==="live").length} live \u2022 {preds.filter(r=>r.status==="closed"||r.status==="expired").length} ended \u2022 {preds.filter(r=>r.aiGenerated).length} AI {(()=>{const w=preds.filter(r=>r.aiGenerated&&r.result==="won").length;const l=preds.filter(r=>r.aiGenerated&&r.result==="lost").length;return w+l>0?`(${w}W/${l}L)`:"";})()}</p></div>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={async()=>{if(!confirm("Trigger AI to generate predictions for today's matches?"))return;try{const r=await fetch("/api/cron/predict",{method:"POST"});const d=await r.json();alert(d.message||JSON.stringify(d));load();}catch(e){alert("Failed: "+e.message);}}} style={{...btn("#8B5CF6"),padding:"10px 20px",fontSize:13}}>{"\u{1F916}"} AI Predict</button>
-                <button onClick={async()=>{try{const r=await fetch("/api/cron/results",{method:"POST"});const d=await r.json();alert(d.message||JSON.stringify(d));load();}catch(e){alert("Failed: "+e.message);}}} style={{...btn("#D4AF37"),padding:"10px 20px",fontSize:13}}>{"\u2705"} Check Results</button>
+                <button onClick={async()=>{
+                  if(!confirm("Trigger AI to generate predictions for today's matches?")) return;
+                  try{
+                    const r = await fetch("/api/cron/predict",{method:"POST"});
+                    const d = await r.json().catch(()=>({error:`HTTP ${r.status}`}));
+                    if (r.ok) {
+                      alert(d.message || `Generated ${d.rounds?.length ?? 0} rounds`);
+                    } else {
+                      alert(`AI Predict failed:\n\n${d.error || "Unknown error"}${d.code ? `\n\nCode: ${d.code}` : ""}`);
+                    }
+                    load();
+                  } catch(e){ alert("Network error: " + e.message); }
+                }} style={{...btn("#8B5CF6"),padding:"10px 20px",fontSize:13}}>{"\u{1F916}"} AI Predict</button>
+                <button onClick={async()=>{
+                  try{
+                    const r = await fetch("/api/cron/results",{method:"POST"});
+                    const d = await r.json().catch(()=>({error:`HTTP ${r.status}`}));
+                    if (r.ok) alert(d.message || "Checked results"); else alert(`Check Results failed:\n\n${d.error || "Unknown"}`);
+                    load();
+                  } catch(e){ alert("Network error: " + e.message); }
+                }} style={{...btn("#D4AF37"),padding:"10px 20px",fontSize:13}}>{"\u2705"} Check Results</button>
                 <button onClick={()=>setModal(true)} style={{...btn("#0B9635"),padding:"10px 20px",fontSize:13}}>+ Create Round</button>
               </div>
             </div>
@@ -1150,6 +1241,23 @@ export default function AdminDash() {
           </div>)}
 
           {/* ═══ SETTINGS ═══ */}
+          {tab==="settings"&&!settingsForm&&(<div className="as" style={{textAlign:"center",padding:"60px 20px"}}>
+            {loadError ? (
+              <>
+                <div style={{fontSize:48,marginBottom:16}}>⚠️</div>
+                <div style={{...val,fontSize:22,color:"#E31725",marginBottom:8}}>Settings unavailable</div>
+                <div style={{fontSize:13,color:"#888",maxWidth:480,margin:"0 auto 16px",lineHeight:1.6}}>
+                  Can't load settings because the dashboard query failed. {health?.message || "See banner at the top of the page for details."}
+                </div>
+                <button onClick={load} style={{...btn("#0B9635"),padding:"12px 28px",fontSize:14}}>Retry</button>
+              </>
+            ) : (
+              <>
+                <div style={{width:40,height:40,border:"3px solid #1E2028",borderTopColor:"#0B9635",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}} />
+                <div style={{fontSize:14,color:"#666"}}>Loading settings…</div>
+              </>
+            )}
+          </div>)}
           {tab==="settings"&&settingsForm&&(<div className="as">
             <h1 style={{...val,fontSize:28,marginBottom:4}}>Platform Settings</h1>
             <p style={{fontSize:14,color:"#555",marginBottom:20}}>Configure your platform</p>

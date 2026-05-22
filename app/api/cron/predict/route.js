@@ -193,8 +193,26 @@ async function runPredictions(force = false) {
     });
   } catch (error) {
     console.error("Cron predict error:", error);
+    // Never leak raw driver errors (bad auth, connection strings, etc.)
+    // to the client — log them, return a clean classified message.
+    const msg = (error?.message || "").toLowerCase();
+    let userMessage = "AI prediction generation failed.";
+    let code = "INTERNAL";
+    if (msg.includes("bad auth") || msg.includes("authentication failed") || msg.includes("not authorized")) {
+      userMessage = "Database authentication failed. Check MONGODB_URI on the server.";
+      code = "DB_AUTH";
+    } else if (msg.includes("enotfound") || msg.includes("etimeout") || msg.includes("serverselectiontimeout")) {
+      userMessage = "Can't reach the database. Check Atlas IP allow-list and cluster status.";
+      code = "DB_UNREACHABLE";
+    } else if (msg.includes("ppq_api_key")) {
+      userMessage = "PayPerQ AI is not configured (missing PPQ_API_KEY).";
+      code = "AI_CONFIG";
+    } else if (msg.includes("football-data") || msg.includes("api-football") || msg.includes("fixture")) {
+      userMessage = "Couldn't fetch today's fixtures from the football API.";
+      code = "FIXTURES";
+    }
     return NextResponse.json(
-      { error: error.message || "Prediction cron failed", duration: Date.now() - startTime },
+      { error: userMessage, code, duration: Date.now() - startTime },
       { status: 500 }
     );
   }
