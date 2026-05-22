@@ -66,13 +66,26 @@ export default function UpgradePrompt({ user, stats, href = "/dashboard", onClic
 
   const dismiss = (e) => {
     e.stopPropagation();
+    e.preventDefault();
     try { localStorage.setItem(`bg_upgrade_${decision.ctaTier}_dismissed`, "1"); } catch {}
     setHidden(true);
   };
 
+  const handleCta = (e) => {
+    if (onClick) {
+      // We have a handler — call it directly. Stop the click here so it
+      // doesn't bubble to anything else and don't navigate.
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+    }
+    // If no onClick, fall through and let the <a> follow its href normally.
+  };
+
+  // Outer container is NOT clickable on its own — the CTA button handles
+  // the action so we don't end up with two competing click targets.
   return (
     <div
-      onClick={onClick}
       style={{
         position: "relative",
         background: `linear-gradient(135deg, ${tier.color}10, #0B963508)`,
@@ -80,7 +93,6 @@ export default function UpgradePrompt({ user, stats, href = "/dashboard", onClic
         borderRadius: 16,
         padding: 18,
         marginBottom: 16,
-        cursor: onClick ? "pointer" : "default",
         overflow: "hidden",
       }}
     >
@@ -101,24 +113,48 @@ export default function UpgradePrompt({ user, stats, href = "/dashboard", onClic
               <span key={p} style={{ fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: `${tier.color}15`, color: tier.color, letterSpacing: 0.3 }}>✓ {p}</span>
             ))}
           </div>
-          <a
-            href={href}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: tier.color,
-              color: "#0B0D10",
-              padding: "8px 16px",
-              borderRadius: 10,
-              fontSize: 12,
-              fontWeight: 800,
-              textDecoration: "none",
-              letterSpacing: 0.5,
-            }}
-          >
-            {decision.cta} <span style={{ fontSize: 14 }}>→</span>
-          </a>
+          {onClick ? (
+            <button
+              type="button"
+              onClick={handleCta}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: tier.color,
+                color: "#0B0D10",
+                padding: "8px 16px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 800,
+                border: "none",
+                cursor: "pointer",
+                letterSpacing: 0.5,
+                fontFamily: "'DM Sans',sans-serif",
+              }}
+            >
+              {decision.cta} <span style={{ fontSize: 14 }}>→</span>
+            </button>
+          ) : (
+            <a
+              href={href}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: tier.color,
+                color: "#0B0D10",
+                padding: "8px 16px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 800,
+                textDecoration: "none",
+                letterSpacing: 0.5,
+              }}
+            >
+              {decision.cta} <span style={{ fontSize: 14 }}>→</span>
+            </a>
+          )}
         </div>
       </div>
     </div>
