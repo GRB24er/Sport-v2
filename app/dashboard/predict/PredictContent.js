@@ -41,7 +41,7 @@ export default function PredictPage() {
     try{
       const [uR,sR]=await Promise.all([
         fetch(`/api/users/${session.user.id}`),
-        fetch("/api/admin/settings"),
+        fetch("/api/admin/settings", { cache: "no-store" }),
       ]);
       if(uR.ok){const d=await uR.json();setUserData(d.user);}
       else if(isFirstLoad.current){setError("Failed to load your data. Please refresh.");}
